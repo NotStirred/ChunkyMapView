@@ -1,0 +1,65 @@
+# Eclipse files.
+/.metadata
+/.recommenders
+.settings
+.project
+.classpath
+
+# Vim swap and undo files.
+*.swp
+*.*~
+
+# Benchmarking & testing.
+/bench/x*
+/test
+/local
+
+# Build tool files.
+.gradle/
+*.class
+*.so
+*.dll
+
+# Release artifacts.
+/lpcache/
+/bin/
+/latest.json
+/snapshot.json
+/snapshot
+/credentials.json
+/credentials.gpg
+/build/
+/Chunky.nsi
+/release_notes-*.txt
+/chunky.jar
+
+
+# IntelliJ IDEA Project files.
+.idea/*
+*.eml
+*.iml
+/*.ipr
+/*.iws
+/out/
+/chunky/out/
+/lib/out/
+/releasetools/out/
+/launcher/out/
+
+# Render snapshots from testing.
+/*.png
+
+# Private files.
+/TODO
+.DS_Store
+/tools/appbundler-*.jar
+
+# Python virtual environment.
+/venv/
+requirements.txt
+
+
+src/native/.idea/
+src/native/build/
+src/native/cmake-build-debug/
+src/native/cmake-build-release/
