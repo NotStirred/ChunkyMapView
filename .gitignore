@@ -58,7 +58,7 @@
 /venv/
 requirements.txt
 
-
+debug.log
 src/native/.idea/
 src/native/build/
 src/native/cmake-build-debug/
