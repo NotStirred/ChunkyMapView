@@ -18,10 +18,42 @@ JNIEXPORT void JNICALL Java_io_github_notstirred_ChunkyMapView_setup
 /*
  * Class:     io_github_notstirred_ChunkyMapView
  * Method:    render
- * Signature: ([Lio/github/notstirred/Plane;)Z
+ * Signature: ([Lio/github/notstirred/TilePos;)Z
  */
 JNIEXPORT jboolean JNICALL Java_io_github_notstirred_ChunkyMapView_render
-(JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat, jobjectArray);
+  (JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat, jobjectArray);
+
+/*
+ * Class:     io_github_notstirred_ChunkyMapView
+ * Method:    getViewX
+ * Signature: ()I
+ */
+JNIEXPORT jfloat JNICALL Java_io_github_notstirred_ChunkyMapView_getViewX
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     io_github_notstirred_ChunkyMapView
+ * Method:    getViewZ
+ * Signature: ()I
+ */
+JNIEXPORT jfloat JNICALL Java_io_github_notstirred_ChunkyMapView_getViewZ
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     io_github_notstirred_ChunkyMapView
+ * Method:    getViewX
+ * Signature: ()I
+ */
+JNIEXPORT jfloat JNICALL Java_io_github_notstirred_ChunkyMapView_getViewSizeX
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     io_github_notstirred_ChunkyMapView
+ * Method:    getViewZ
+ * Signature: ()I
+ */
+JNIEXPORT jfloat JNICALL Java_io_github_notstirred_ChunkyMapView_getViewSizeZ
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

@@ -1,102 +1,72 @@
 package io.github.notstirred;
 
-import io.github.notstirred.util.BoundingBoxf2d;
+import io.github.notstirred.tile.TilePos;
+import io.github.notstirred.track.DetailBasedView;
+import io.github.notstirred.track.DetailBasedViewTracker;
 import io.github.notstirred.util.MathUtil;
-import io.github.notstirred.util.MutVec2f;
-import io.github.notstirred.util.Vec2f;
-
-import java.util.ArrayList;
-import java.util.List;
+import io.github.notstirred.util.bb.MutableAABBf2d;
+import io.github.notstirred.util.vec.MutVec2f;
+import io.github.notstirred.util.vec.Vec2i;
 
 public class ChunkyMapView {
     static {
         System.loadLibrary("chunkymapview");
     }
 
-    List<Plane> planes = new ArrayList<>();
+    DetailBasedViewTracker tracker;
 
-    BoundingBoxf2d boundingBox = new BoundingBoxf2d(-2.5f, -1.40625f, 2.5f, 1.40625f);
-    MutVec2f viewResolution = new MutVec2f(1920, 1080);
+    MutVec2f viewResolution = new MutVec2f(1000, 800);
+
+    private static final int MAX_LEVEL = 31;
+
+    int lastLevel = 0;
 
     public ChunkyMapView() {
+        tracker = new DetailBasedViewTracker();
+
         setup();
 
+        MutableAABBf2d cameraBox = new MutableAABBf2d(0, 0, 0, 0);
         do {
-            boundingBox.getMaxExtents().scale(1+2.5f/1000, 1+2.5f/1000);
-            boundingBox.moveBy(new MutVec2f(0.025f, 0.025f));
-            planes.clear();
-            loadForBox(boundingBox);
-        } while(render(
-                boundingBox.getMinExtents().getX(),
-                boundingBox.getMinExtents().getY(),
-                boundingBox.getMaxExtents().getX() - boundingBox.getMinExtents().getX(),
-                boundingBox.getMaxExtents().getY() - boundingBox.getMinExtents().getY(),
-                planes.toArray(new Plane[0]))
+            float viewX = getViewX();
+            float viewZ = getViewZ();
+            cameraBox.minExtents().x(viewX);
+            cameraBox.minExtents().y(viewZ);
+            cameraBox.maxExtents().x(viewX + getViewSizeX());
+            cameraBox.maxExtents().y(viewZ + getViewSizeZ());
+
+            int level = Math.min(MAX_LEVEL, calculateHighestLevelForView(cameraBox.size().toIntVec(), viewResolution.toIntVec().toImmutable()));
+
+            lastLevel = level;
+            System.out.println(level + " " + Math.min(level+3, MAX_LEVEL));
+            DetailBasedView detailBasedView = new DetailBasedView(viewResolution.toIntVec().toImmutable(), cameraBox.toExpandedIntBox().toImmutable(), level, Math.min(level+3, MAX_LEVEL));
+            tracker.viewUpdated(detailBasedView);
+        } while(render(cameraBox.minExtents().x(), cameraBox.minExtents().y(),
+                cameraBox.maxExtents().x() - cameraBox.minExtents().x(),
+                cameraBox.maxExtents().y() - cameraBox.minExtents().y(),
+                tracker.getPositions().toArray(new TilePos[0]))
         );
     }
 
-    private void loadForBox(BoundingBoxf2d boundingBox) {
-        Vec2f maxExtents = boundingBox.getImmutableMaxExtents();
-        Vec2f minExtents = boundingBox.getImmutableMinExtents();
+    private static int calculateHighestLevelForView(Vec2i areaSize, Vec2i viewResolution) {
+        double xPixelsPerTile =  (viewResolution.x()) / ((double) areaSize.x() * 16);
+        double zPixelsPerTile =  (viewResolution.y()) / ((double) areaSize.y() * 16);
 
-        Vec2f areaSize = maxExtents.subbed(minExtents);
-
-        int targetLevel = calculateTargetLodForView(areaSize, viewResolution);
-
-        for (int i = 0; i < 5; i++) {
-            loadPlanesInBoxForLevel(minExtents, maxExtents, targetLevel + i);
-        }
-    }
-
-    private void loadPlanesInBoxForLevel(Vec2f minExtents, Vec2f maxExtents, int targetLod) {
-        int minX = ((int) Math.floor(minExtents.getX()) >> targetLod) - 2;
-        int minZ = ((int) Math.floor(minExtents.getY()) >> targetLod) - 2;
-
-        int maxX = (((int) Math.floor(maxExtents.getX()) >> targetLod) + 1) + 2;
-        int maxZ = (((int) Math.floor(maxExtents.getY()) >> targetLod) + 1) + 2;
-
-        for (int x = minX; x < maxX; x++) {
-            for (int z = minZ; z < maxZ; z++) {
-                planes.add(new Plane(x << targetLod, z << targetLod, (int) Math.pow(2, targetLod)));
-            }
-        }
-    }
-
-    private static int calculateTargetLodForView(Vec2f areaSize, MutVec2f viewResolution) {
-        float xPixelsPerTile = viewResolution.getX() / (areaSize.getX() * 16);
-        float zPixelsPerTile = viewResolution.getY() / (areaSize.getY() * 16);
-
-        float pixelsPerTile = Math.max(xPixelsPerTile, zPixelsPerTile);
-        return (int) Math.max(MathUtil.log2(16*(1/pixelsPerTile)), 0);
+        double pixelsPerTile = Math.max(xPixelsPerTile, zPixelsPerTile);
+        return (int) Math.floor(Math.max(MathUtil.log2(16*(1/pixelsPerTile)), 0));
     }
 
     private native void setup();
 
-    private native boolean render(float x1, float z1, float x2, float z2, Plane[] planes);
+    private native boolean render(float x1, float z1, float x2, float z2, TilePos[] positions);
+
+    private native float getViewX();
+    private native float getViewZ();
+
+    private native float getViewSizeX();
+    private native float getViewSizeZ();
 
     public static void main(String[] args) {
         new ChunkyMapView();
-    }
-}
-
-class Plane {
-    private final int x, z, scale;
-
-    public Plane(final int x, final int z, final int scale) {
-        this.x = x;
-        this.z = z;
-        this.scale = scale;
-    }
-
-    public int getX() {
-        return x;
-    }
-
-    public int getZ() {
-        return z;
-    }
-
-    public int getScale() {
-        return scale;
     }
 }

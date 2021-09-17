@@ -1,31 +1,12 @@
-package io.github.notstirred.util;
+package io.github.notstirred.util.vec;
 
+import lombok.*;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class MutVec2f {
     private float x, y;
-
-    public MutVec2f(float x, float y) {
-        this.x = x;
-        this.y = y;
-    }
-    public MutVec2f() {
-        this(0, 0);
-    }
-
-    public float getX() {
-        return x;
-    }
-
-    public float getY() {
-        return y;
-    }
-
-    public void setX(float x) {
-        this.x = x;
-    }
-
-    public void setY(float y) {
-        this.y = y;
-    }
 
     public void set(MutVec2f other) {
         this.x = other.x;
@@ -66,8 +47,16 @@ public class MutVec2f {
         return new MutVec2f(this.x - other.x, this.y - other.y);
     }
 
-    public void scale(double xScalar, double yScalar) {
+    public void scale(float xScalar, float yScalar) {
         this.x *= xScalar;
         this.y *= yScalar;
+    }
+
+    public MutVec2i toIntVec() {
+        return new MutVec2i((int) this.x, (int) this.y);
+    }
+
+    public Vec2f toImmutable() {
+        return new Vec2f(this.x, this.y);
     }
 }

@@ -13,7 +13,6 @@
 
 #include <vector>
 #include <iostream>
-#include <deque>
 #include <armadillo>
 
 #include "mapView.h"
@@ -112,6 +111,8 @@ void setup() {
     }
     glfwSetWindowSizeCallback(window, glfw_window_size_callback);
 
+    glfwSetWindowPos(window, 1920+400, 200);
+
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -166,6 +167,9 @@ void setup() {
 
 glm::vec3 camera_pos(0, 1, 0);
 
+glm::vec2 view_pos(0, 0);
+glm::vec2 view_size(1280, 720);
+
 double lastTime = glfwGetTime();
 
 double xpos, ypos;
@@ -189,7 +193,7 @@ glm::vec3 colorsByScale[] {
     { 1, 1, 1 },
 };
 
-bool render(float x1, float z1, float x2, float z2, const std::vector<Plane>& planes) {
+bool render(float x1, float z1, float x2, float z2, const std::vector<TilePos>& planes) {
     if(!glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
         double deltaTime = glm::min(currentTime - lastTime, 0.1);
@@ -228,16 +232,16 @@ bool render(float x1, float z1, float x2, float z2, const std::vector<Plane>& pl
         {
             if(grabMouse) {
                 double speedDelta = speed * deltaTime;
-                if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+                if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
                     camera_pos += glm::vec3(direction.x*speedDelta, direction.y*speedDelta, direction.z*speedDelta);
                 }
-                if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+                if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
                     camera_pos += glm::vec3(-right.x*speedDelta, -right.y*speedDelta, -right.z*speedDelta);
                 }
-                if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+                if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
                     camera_pos += glm::vec3(-direction.x*speedDelta, -direction.y*speedDelta, -direction.z*speedDelta);
                 }
-                if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+                if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
                     camera_pos += glm::vec3(right.x*speedDelta, right.y*speedDelta, right.z*speedDelta);
                 }
                 if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
@@ -248,6 +252,26 @@ bool render(float x1, float z1, float x2, float z2, const std::vector<Plane>& pl
                 }
                 if(glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
                     std::cout << "PID" << ::getpid() << " (PPID: " << ::getppid() << ")" << std::endl;
+                }
+                if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+                    view_pos.y += deltaTime * std::max(view_size.x, view_size.y);
+                }
+                if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+                    view_pos.x += deltaTime * std::max(view_size.x, view_size.y);
+                }
+                if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+                    view_pos.y -= deltaTime * std::max(view_size.x, view_size.y);
+                }
+                if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+                    view_pos.x -= deltaTime * std::max(view_size.x, view_size.y);
+                }
+                if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+                    view_size.x *= 1 - deltaTime;
+                    view_size.y *= 1 - deltaTime;
+                }
+                if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+                    view_size.x *= 1 + deltaTime;
+                    view_size.y *= 1 + deltaTime;
                 }
             }
             if(glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
@@ -297,10 +321,10 @@ bool render(float x1, float z1, float x2, float z2, const std::vector<Plane>& pl
             }
 
             for (const auto &plane : planes) {
-                mvp = vp * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(plane.x, -plane.scale/10.f, plane.z)), glm::vec3(plane.scale*0.9f));
+                mvp = vp * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(plane.x << plane.level, (float) -plane.level, plane.z << plane.level)), glm::vec3((float)(1 << plane.level) * 0.95f));
                 glUniformMatrix4fv(matName, 1, GL_FALSE, &mvp[0][0]);
 
-                auto color = colorsByScale[((int)floor(log2(plane.scale))) & 7];
+                auto color = colorsByScale[plane.level & 7];
                 glUniform4f(in_colourName, color.r, color.g, color.b, 1);
                 glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, nullptr);
             }
@@ -322,5 +346,19 @@ bool render(float x1, float z1, float x2, float z2, const std::vector<Plane>& pl
     // close GL context and any other GLFW resources
     glfwTerminate();
     return false;
+}
+
+float viewPosX() {
+    return view_pos.x;
+}
+float viewPosZ() {
+    return view_pos.y;
+}
+
+float viewSizeX() {
+    return view_size.x;
+}
+float viewSizeZ() {
+    return view_size.y;
 }
 

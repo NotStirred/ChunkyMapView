@@ -1,4 +1,4 @@
-package io.github.notstirred.util;
+package io.github.notstirred.tile;
 
 import com.sun.istack.internal.NotNull;
 
