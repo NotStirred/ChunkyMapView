@@ -1,21 +1,17 @@
 package io.github.notstirred.tile;
 
-import com.sun.istack.internal.NotNull;
+import lombok.Data;
+import lombok.NonNull;
 
 import java.util.Objects;
 
 import static io.github.notstirred.util.Validation.check;
 
+@Data
 public class TilePos {
     private final int x;
     private final int z;
     private final int level;
-
-    public TilePos(final int x, final int z, final int level) {
-        this.x = x;
-        this.z = z;
-        this.level = level;
-    }
 
     public TilePos lower() {
         return lowerTo(level + 1);
@@ -48,7 +44,7 @@ public class TilePos {
     }
 
     /** Return if this {@link TilePos} contains the specified {@link TilePos} */
-    public boolean contains(@NotNull TilePos pos) {
+    public boolean contains(@NonNull TilePos pos) {
         int shift = this.level - pos.level;
         return shift > 0
             && (this.x << shift) >= pos.x && ((this.x + 1) << shift) <= pos.x
@@ -65,6 +61,12 @@ public class TilePos {
 
     @Override
     public int hashCode() {
-        return Objects.hash(x, z, level);
+        int result = 1;
+
+        result = 31 * result + Integer.hashCode(x);
+        result = 31 * result + Integer.hashCode(z);
+        result = 31 * result + Integer.hashCode(level);
+
+        return result;
     }
 }

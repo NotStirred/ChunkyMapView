@@ -1,9 +1,9 @@
 package io.github.notstirred.track;
 
-import com.sun.istack.internal.NotNull;
+import lombok.NonNull;
 
 public interface ViewTracker<POS, VIEW> {
 
-    void viewUpdated(@NotNull VIEW newView);
+    void viewUpdated(@NonNull VIEW newView);
 
 }

@@ -13,6 +13,14 @@ public class MutVec2f {
         this.y = other.y;
     }
 
+    public void mulX(float val) {
+        this.x *= val;
+    }
+
+    public void mulY(float val) {
+        this.y *= val;
+    }
+
     public void addX(float val) {
         this.x += val;
     }

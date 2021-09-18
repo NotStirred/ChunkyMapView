@@ -1,26 +1,24 @@
 package io.github.notstirred.track;
 
-import com.sun.istack.internal.NotNull;
 import io.github.notstirred.tile.TilePos;
 import io.github.notstirred.util.bb.AABBi2d;
 import io.github.notstirred.util.vec.Vec2i;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.function.Consumer;
 
+@RequiredArgsConstructor
 public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedView> {
     private static final int PADDING = 2;
 
-    Set<TilePos> positions = new HashSet<>();
+    private final Consumer<TilePos> added;
+    private final Consumer<TilePos> removed;
 
     private DetailBasedView oldView = null;
 
-    public Set<TilePos> getPositions() {
-        return positions;
-    }
-
     @Override
-    public void viewUpdated(@NotNull DetailBasedView newView) {
+    public void viewUpdated(@NonNull DetailBasedView newView) {
         DetailBasedView oldView = this.oldView;
 
         if(oldView != null && oldView.equals(newView))
@@ -29,7 +27,6 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
         if (oldView != null) {
             addRemoveDiff(oldView, newView);
         } else {
-            positions.clear();
             addAllPositionsWithinView(newView);
         }
 
@@ -57,7 +54,7 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
                 for (int x = oldMinExtents.x(); x <= oldMaxExtents.x(); x++) {
                     for (int z = oldMinExtents.y(); z <= oldMaxExtents.y(); z++) {
                         if (!newView.hasLevel(level) || !newViewExtents.intersects(x, z)) {
-                            positions.remove(new TilePos(x, z, level));
+                            removed.accept(new TilePos(x, z, level));
                         }
                     }
                 }
@@ -68,7 +65,7 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
                 for (int x = newMinExtents.x(); x <= newMaxExtents.x(); x++) {
                     for (int z = newMinExtents.y(); z <= newMaxExtents.y(); z++) {
                         if (!oldView.hasLevel(level) || !oldViewExtents.intersects(x, z)) {
-                            positions.add(new TilePos(x, z, level));
+                            added.accept(new TilePos(x, z, level));
                         }
                     }
                 }
@@ -94,7 +91,7 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
 
             for (int x = viewExtentsForLevel.minExtents().x(); x <= viewExtentsForLevel.maxExtents().x(); x++) {
                 for (int z = viewExtentsForLevel.minExtents().y(); z <= viewExtentsForLevel.maxExtents().y(); z++) {
-                    positions.add(new TilePos(x, z, level));
+                    added.accept(new TilePos(x, z, level));
                 }
             }
         }
