@@ -5,7 +5,6 @@ import io.github.notstirred.chunkymapview.tile.DetailBasedTile;
 import io.github.notstirred.chunkymapview.tile.TilePos;
 import io.github.notstirred.chunkymapview.util.Validation;
 import io.github.notstirred.chunkymapview.util.bb.AABBi2d;
-import io.github.notstirred.chunkymapview.util.gl.ReusableGLTexture;
 import io.github.notstirred.chunkymapview.util.vec.Vec2i;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -175,6 +174,11 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
         }
     }
 
+    private void tileCompleted(DetailBasedTile tile) {
+        this.waitingPositions.remove(tile.pos());
+        this.fillWaiting();
+    }
+
     public static int manhattanDistance(int x1, int z1, int x2, int z2) {
         return Math.abs(x1 - x2) + Math.abs(z1 - z2);
     }
@@ -197,17 +201,11 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
         }
 
         public void schedule() {
-            this.tileFuture = DetailBasedViewTracker.this.mapView.futureForPos(pos);
+            this.tileFuture = DetailBasedViewTracker.this.mapView.loadingFuture(pos, generationExecutor);
             this.tileFuture.thenAcceptAsync((tile) -> {
                 this.tile = tile;
-                DetailBasedViewTracker.this.waitingPositions.remove(tile.pos());
-                DetailBasedViewTracker.this.fillWaiting();
-            }, DetailBasedViewTracker.this.trackerExecutor).thenAcceptAsync((tile) ->
-                    DetailBasedViewTracker.this.mapView.scheduleTask(() -> {
-                        ReusableGLTexture texture = DetailBasedViewTracker.this.mapView.newTexture();
-                        texture.setTexture(this.tile.data(), false);
-                        this.tile.texture(texture);
-            }), DetailBasedViewTracker.this.generationExecutor);
+                DetailBasedViewTracker.this.tileCompleted(tile);
+            }, DetailBasedViewTracker.this.trackerExecutor);
         }
 
         public void unload() {

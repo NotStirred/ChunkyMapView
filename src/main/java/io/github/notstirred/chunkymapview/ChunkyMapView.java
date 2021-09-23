@@ -39,7 +39,6 @@ public class ChunkyMapView {
         try {
             do {
 
-                mapView.executeScheduledTasks();
                 renderer.update(viewPos, viewSize);
                 viewExtents.maxExtents().set(viewPos.added(viewSize));
 
@@ -53,8 +52,9 @@ public class ChunkyMapView {
                 if(delta > 0) {
                     Thread.sleep(delta);
                 }
-
                 startTime = System.currentTimeMillis();
+
+                mapView.executeScheduledTasks();
             } while (renderer.render(tracker.tiles(), viewExtents));
         } catch (InterruptedException ignored) { }
     }

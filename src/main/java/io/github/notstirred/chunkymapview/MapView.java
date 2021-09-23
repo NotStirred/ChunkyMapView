@@ -1,5 +1,6 @@
 package io.github.notstirred.chunkymapview;
 
+import io.github.notstirred.chunkymapview.concurrent.SimpleTaskPool;
 import io.github.notstirred.chunkymapview.tile.Tile;
 import io.github.notstirred.chunkymapview.tile.TilePos;
 import io.github.notstirred.chunkymapview.tile.gen.TileGenerator;
@@ -8,18 +9,19 @@ import io.github.notstirred.chunkymapview.util.gl.ReusableGLTexture;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-import java.nio.ByteBuffer;
-import java.util.Deque;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executor;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 
 @RequiredArgsConstructor
 public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>, DATA> {
-    private final Deque<Runnable> tasks = new ConcurrentLinkedDeque<>();
-    private static final Deque<Runnable> staticTasks = new ConcurrentLinkedDeque<>();
+    private static final SimpleTaskPool glThreadExecutor = new SimpleTaskPool(Thread.currentThread());
+
+    public static Executor glThreadExecutor() {
+        return MapView.glThreadExecutor;
+    }
 
     protected final TileGenerator<POS, DATA> tileGenerator = this.tileGenerator0();
 
@@ -31,12 +33,20 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>,
     };
 
     @NonNull
-    public CompletableFuture<TILE> futureForPos(POS pos) {
-        return CompletableFuture.supplyAsync(() -> {
+    public CompletableFuture<TILE> loadingFuture(POS pos, Executor executor) {
+        CompletableFuture<TILE> tileFuture = CompletableFuture.supplyAsync(() -> {
             TILE tile = createTile0(pos);
             generateTile0(tile);
             return tile;
-        });
+        }, executor);
+
+        tileFuture.thenAcceptAsync(tile -> {
+            ReusableGLTexture texture = this.newTexture();
+            texture.setTexture(tile.data(), false);
+            tile.texture(texture);
+        }, glThreadExecutor);
+
+        return tileFuture;
     }
 
     protected abstract TileGenerator<POS, DATA> tileGenerator0();
@@ -46,15 +56,14 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>,
     protected abstract void generateTile0(TILE tile);
 
     public void scheduleTask(Runnable runnable) {
-        tasks.addLast(runnable);
+        glThreadExecutor.execute(runnable);
     }
     public static void scheduleTaskStatic(Runnable runnable) {
-        staticTasks.addLast(runnable);
+        glThreadExecutor.execute(runnable);
     }
 
     public void executeScheduledTasks() {
-        tasks.removeIf((runnable) -> { runnable.run(); return true; });
-        staticTasks.removeIf((runnable) -> { runnable.run(); return true; });
+        glThreadExecutor.runTasks();
     }
 
     public ReusableGLTexture newTexture() {

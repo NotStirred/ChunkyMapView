@@ -14,6 +14,10 @@ public class DetailBasedTile implements Tile<TilePos, ByteBuffer> {
     @Getter @Setter
     private ByteBuffer data;
 
-    @Getter @Setter
+    @Getter
     private ReusableGLTexture texture = null;
+
+    public void texture(ReusableGLTexture texture) {
+        this.texture = texture;
+    }
 }
