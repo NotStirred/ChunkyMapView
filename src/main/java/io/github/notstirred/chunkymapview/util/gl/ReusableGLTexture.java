@@ -10,12 +10,13 @@ public class ReusableGLTexture extends GLObject {
 
     private final int width;
     private final int height;
-    private final int colorFormat;
+    private final int internalFormat;
+    private final int format;
     private final int type;
     private final int target;
     private boolean allocated = false;
 
-    public ReusableGLTexture(int width, int height, int colorFormat, int type, int target, int minScaling, int magScaling, int edgeClamp) {
+    public ReusableGLTexture(int width, int height, int internalFormat, int type, int target, int format, int minScaling, int magScaling, int edgeClamp) {
         super(glGenTextures());
         glBindTexture(target, this.id);
 
@@ -27,26 +28,28 @@ public class ReusableGLTexture extends GLObject {
 
         this.width = width;
         this.height = height;
-        this.colorFormat = colorFormat;
+        this.internalFormat = internalFormat;
+        this.format = format;
         this.type = type;
         this.target = target;
-    }
-
-    public void bind() {
-        glBindTexture(this.target, this.id);
     }
 
     public void setTexture(ByteBuffer buffer, boolean mipmaps) {
         this.bind();
         if(!allocated) {
             allocated = true;
-            glTexImage2D(this.target, 0, this.colorFormat, this.width, this.height, 0, this.colorFormat, this.type, buffer);
+            glTexImage2D(this.target, 0, this.internalFormat, this.width, this.height, 0, this.format, this.type, buffer);
             if (mipmaps) {
                 glGenerateMipmap(this.target);
             }
         } else {
-            glTexSubImage2D(this.target, 0, 0, 0, this.width, this.height, this.colorFormat, this.type, buffer);
+            glTexSubImage2D(this.target, 0, 0, 0, this.width, this.height, this.format, this.type, buffer);
         }
+    }
+
+    @Override
+    public void bind() {
+        glBindTexture(this.target, this.id);
     }
 
     @Override

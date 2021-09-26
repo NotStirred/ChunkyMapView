@@ -14,5 +14,7 @@ public abstract class GLObject {
         this.cleaner = PCleaner.cleaner(this, () -> MapView.scheduleTaskStatic(delete));
     }
 
+    protected abstract void bind();
+
     protected abstract Runnable deleter(int id);
 }
