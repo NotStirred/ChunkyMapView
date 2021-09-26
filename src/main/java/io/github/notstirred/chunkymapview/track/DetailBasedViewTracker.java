@@ -16,6 +16,11 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+/**
+ * This is used for both tracking tiles that should be generated, and also frustum culling
+ *
+ * {@link DetailBasedViewTracker#loadedPositions} is a set of all positions in the frustum, if generated
+ */
 @RequiredArgsConstructor
 public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedView, DetailBasedTile> {
     private static final int PADDING = 1;
@@ -30,6 +35,8 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
     private final MapView<TilePos, DetailBasedTile, ByteBuffer> mapView;
 
     private final Map<TilePos, Entry> entries = new ConcurrentHashMap<>();
+
+    private final Set<TilePos> loadedPositions = new HashSet<>();
 
     /** sorted queue of non-loaded required positions */
     private ArrayDeque<TilePos> requiredPositions = new ArrayDeque<>();
@@ -54,18 +61,19 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
         if(oldView != null && oldView.equals(newView))
             return; //view hasn't changed
 
-        requiredPositions.removeIf(pos -> !newView.contains(pos));
+        this.requiredPositions.removeIf(pos -> !newView.contains(pos));
 
         if (oldView != null) {
             addRemoveDiff(oldView, newView,
-                tilePos -> Validation.check(requiredPositions.add(tilePos), "Position already queued!"),
+                tilePos -> Validation.check(this.requiredPositions.add(tilePos), "Position already queued!"),
                 tilePos -> {
-                    entries.computeIfPresent(tilePos, (pos, entry) -> {
+                    this.entries.computeIfPresent(tilePos, (pos, entry) -> {
                         entry.unload();
                         return null;
                     });
-//                    requiredPositions.remove(tilePos);
-                    waitingPositions.remove(tilePos);
+                    //the position will not be in these sets if it has not been generated yet
+                    this.loadedPositions.remove(tilePos);
+                    this.waitingPositions.remove(tilePos);
                 }
             );
         } else {
@@ -85,19 +93,19 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
             } else
                 return levelDiff;
         });
-        requiredPositions = new ArrayDeque<>(Arrays.asList(positions));
+        this.requiredPositions = new ArrayDeque<>(Arrays.asList(positions));
 
         fillWaiting();
     }
 
     private void fillWaiting() {
-        int toAdd = (THREAD_COUNT << 4) - waitingPositions.size();
+        int toAdd = (THREAD_COUNT << 4) - this.waitingPositions.size();
         for (int i = 0; i < toAdd; i++) {
-            TilePos pos = requiredPositions.poll();
+            TilePos pos = this.requiredPositions.poll();
             if(pos == null)
                 break;
-            waitingPositions.add(pos);
-            entries.compute(pos, (_pos, entry) -> {
+            this.waitingPositions.add(pos);
+            this.entries.compute(pos, (_pos, entry) -> {
                 if (entry == null) {
                     entry = new Entry(_pos);
                 } else {
@@ -168,13 +176,14 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
 
             for (int x = viewExtentsForLevel.minExtents().x(); x <= viewExtentsForLevel.maxExtents().x(); x++) {
                 for (int z = viewExtentsForLevel.minExtents().y(); z <= viewExtentsForLevel.maxExtents().y(); z++) {
-                    requiredPositions.add(new TilePos(x, z, level));
+                    this.requiredPositions.add(new TilePos(x, z, level));
                 }
             }
         }
     }
 
     private void tileCompleted(DetailBasedTile tile) {
+        this.loadedPositions.add(tile.pos());
         this.waitingPositions.remove(tile.pos());
         this.fillWaiting();
     }
@@ -184,7 +193,7 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
     }
 
     public Collection<DetailBasedTile> tiles() {
-        return entries.values().stream().map(entry -> entry.tile).filter(Objects::nonNull).collect(Collectors.toList());
+        return this.entries.values().stream().map(entry -> entry.tile).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private class Entry {
@@ -201,7 +210,7 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
         }
 
         public void schedule() {
-            this.tileFuture = DetailBasedViewTracker.this.mapView.loadingFuture(pos, generationExecutor);
+            this.tileFuture = DetailBasedViewTracker.this.mapView.loadingFuture(this.pos, DetailBasedViewTracker.this.generationExecutor);
             this.tileFuture.thenAcceptAsync((tile) -> {
                 this.tile = tile;
                 DetailBasedViewTracker.this.tileCompleted(tile);

@@ -38,12 +38,11 @@ public class ChunkyMapView {
         long startTime = System.currentTimeMillis();
         try {
             do {
-
                 renderer.update(viewPos, viewSize);
                 viewExtents.maxExtents().set(viewPos.added(viewSize));
 
                 int level = Math.min(MAX_LEVEL, calculateHighestLevelForView(viewExtents.size().toIntVec(), viewResolution.toIntVec().toImmutable()));
-                DetailBasedView detailBasedView = new DetailBasedView(viewResolution.toIntVec().toImmutable(), viewExtents.toExpandedIntBox().toImmutable(), level, Math.min(level + 3, MAX_LEVEL), PADDING);
+                DetailBasedView detailBasedView = new DetailBasedView(viewResolution.toIntVec().toImmutable(), viewExtents.toExpandedIntBox().toImmutable(), level, Math.min(level + 16, MAX_LEVEL), PADDING);
                 tracker.viewUpdated(detailBasedView);
 
                 timeLastFrame = System.currentTimeMillis() - startTime;
