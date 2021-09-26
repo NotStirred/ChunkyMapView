@@ -14,7 +14,7 @@ import org.lwjgl.system.MemoryStack;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
-import java.util.Collection;
+import java.util.*;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
@@ -27,10 +27,8 @@ import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL11.GL_LESS;
 import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
 import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLE_STRIP;
 import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
-import static org.lwjgl.opengl.GL11.glBindTexture;
 import static org.lwjgl.opengl.GL11.glBlendFunc;
 import static org.lwjgl.opengl.GL11.glClearColor;
 import static org.lwjgl.opengl.GL11.glDepthFunc;
@@ -74,8 +72,8 @@ public class Renderer {
     double panSpeed = 5;
 
     private final int mvpLoc;
-    private final int colourLoc;
-    private final int texName;
+    private final int colorLoc;
+    private final int texLoc;
 
     Vector3f[] colorsByScale = {
         new Vector3f( 1.0f, 0.0f, 0.0f),
@@ -92,8 +90,8 @@ public class Renderer {
         init();
 
         mvpLoc = glGetUniformLocation(planeProgram, "MVP");
-        colourLoc = glGetUniformLocation(planeProgram, "in_colour");
-        texName = glGetUniformLocation(planeProgram, "tex");
+        colorLoc = glGetUniformLocation(planeProgram, "in_color");
+        texLoc = glGetUniformLocation(planeProgram, "tex");
     }
 
     public boolean render(Collection<DetailBasedTile> tiles, MutableAABBf2d viewExtents) {
@@ -140,7 +138,7 @@ public class Renderer {
             for (DetailBasedTile tile : tiles) {
                 if(tile.texture() == null)
                     continue;
-                
+
                 //select texture unit 0
                 glActiveTexture(GL_TEXTURE0);
                 //bind our texture to the active 2D texture unit
@@ -151,12 +149,11 @@ public class Renderer {
 
                 mvp.get(mvpArray);
 
-                glUniform1i(texName, 0); //set texture unit 0
+                glUniform1i(texLoc, 0); //set texture unit 0
 
                 glUniformMatrix4fv(mvpLoc, false, mvpArray);
-
-                Vector3f colour = colorsByScale[pos.level() & 7];
-                glUniform4f(colourLoc, colour.x, colour.y, colour.z, 1);
+                Vector3f color = colorsByScale[pos.level() & 7];
+                glUniform4f(colorLoc, color.x, color.y, color.z, 1);
                 glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, 0);
 
             }
@@ -172,7 +169,7 @@ public class Renderer {
     private void init() {
         glfwInit();
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 

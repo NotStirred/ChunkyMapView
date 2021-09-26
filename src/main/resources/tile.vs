@@ -1,13 +1,15 @@
-#version 400
+#version 330
+#extension GL_ARB_explicit_uniform_location : require
+#extension GL_ARB_separate_shader_objects : enable
 
 in vec3 vp;
-in vec2 aTexCoord;
-
-out vec2 TexCoord;
+in vec2 inTexCoord;
 
 uniform mat4 MVP;
 
-void main(){
+out vec2 texCoord;
+
+void main() {
   gl_Position =  MVP * vec4(vp,1);
-  TexCoord = aTexCoord;
+  texCoord = inTexCoord;
 }

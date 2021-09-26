@@ -1,12 +1,14 @@
-#version 400
+#version 330
+#extension GL_ARB_explicit_uniform_location : require
+#extension GL_ARB_separate_shader_objects : enable
 
-in vec2 TexCoord;
+in vec2 texCoord;
 
-out vec4 frag_colour;
-
-uniform vec4 in_colour;
+uniform vec4 in_color;
 uniform sampler2D tex;
 
+out vec4 frag_color;
+
 void main() {
-    frag_colour = texture(tex, TexCoord) * in_colour;
+    frag_color = texture(tex, texCoord) * in_color;
 }

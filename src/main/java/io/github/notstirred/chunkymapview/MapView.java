@@ -28,7 +28,7 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>,
     private final RecyclingSupplier<ReusableGLTexture> textureSupplier = new RecyclingSupplier<ReusableGLTexture>() {
         @Override
         protected ReusableGLTexture allocate0() {
-            return new ReusableGLTexture(16, 16, GL_RGB, GL_UNSIGNED_BYTE, GL_TEXTURE_2D, GL_LINEAR, GL_NEAREST, GL_CLAMP_TO_EDGE);
+            return new ReusableGLTexture(16, 16, GL_RGB8, GL_UNSIGNED_BYTE, GL_TEXTURE_2D, GL_RGB, GL_LINEAR, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
         }
     };
 

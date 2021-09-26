@@ -1,6 +1,10 @@
 package io.github.notstirred.chunkymapview.util;
 
 public class MathUtil {
+    public static int ceilDiv(int a, int b) {
+        return -Math.floorDiv(-a, b);
+    }
+
     public static double log2(double N) {
         return (Math.log(N) / Math.log(2));
     }
