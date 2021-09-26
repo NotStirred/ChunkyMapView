@@ -16,15 +16,15 @@ public class ReusableGLTexture extends GLObject {
     private final int target;
     private boolean allocated = false;
 
-    public ReusableGLTexture(int width, int height, int internalFormat, int type, int target, int format, int minScaling, int magScaling, int edgeClamp) {
+    public ReusableGLTexture(int width, int height, int internalFormat, int type, int target, int format, int minScaling, int magScaling, int edgeClampS, int edgeClampT) {
         super(glGenTextures());
         glBindTexture(target, this.id);
 
         glTexParameteri(target, GL_TEXTURE_MIN_FILTER, minScaling);
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, magScaling);
 
-        glTexParameteri(target, GL_TEXTURE_WRAP_S, edgeClamp);
-        glTexParameteri(target, GL_TEXTURE_WRAP_T, edgeClamp);
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, edgeClampS);
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, edgeClampT);
 
         this.width = width;
         this.height = height;
