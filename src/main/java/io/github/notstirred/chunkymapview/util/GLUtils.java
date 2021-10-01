@@ -24,7 +24,7 @@ import static org.lwjgl.opengl.GL20C.*;
 import static org.lwjgl.opengl.GL20C.glGetShaderInfoLog;
 import static org.lwjgl.system.MemoryUtil.memUTF8;
 
-public class GlUtils {
+public class GLUtils {
     private static ByteBuffer resizeBuffer(ByteBuffer buffer, int newCapacity) {
         ByteBuffer newBuffer = BufferUtils.createByteBuffer(newCapacity);
         buffer.flip();
@@ -109,8 +109,8 @@ public class GlUtils {
 
     public static int createQuadProgram(String vertexShaderResource, String fragmentShaderResource) throws IOException {
         int program = glCreateProgram();
-        int vs = GlUtils.createShader(vertexShaderResource, GL_VERTEX_SHADER, null);
-        int fs = GlUtils.createShader(fragmentShaderResource, GL_FRAGMENT_SHADER, null);
+        int vs = GLUtils.createShader(vertexShaderResource, GL_VERTEX_SHADER, null);
+        int fs = GLUtils.createShader(fragmentShaderResource, GL_FRAGMENT_SHADER, null);
         glAttachShader(program, vs);
         glAttachShader(program, fs);
         glLinkProgram(program);

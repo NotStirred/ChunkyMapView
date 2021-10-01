@@ -10,6 +10,7 @@ import io.github.notstirred.chunkymapview.util.MathUtil;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
 import io.github.notstirred.chunkymapview.util.vec.MutVec2f;
 import io.github.notstirred.chunkymapview.util.vec.Vec2i;
+import org.lwjgl.opengl.GLUtil;
 
 import java.nio.ByteBuffer;
 
@@ -53,8 +54,12 @@ public class ChunkyMapView {
                 }
                 startTime = System.currentTimeMillis();
 
-                mapView.executeScheduledTasks();
-            } while (renderer.render(tracker.tiles(), viewExtents));
+                try {
+                    mapView.executeScheduledTasks();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } while (renderer.render(mapView.regionTextures(), viewExtents));
         } catch (InterruptedException ignored) { }
     }
 

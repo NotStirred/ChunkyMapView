@@ -15,8 +15,7 @@ public class DetailBasedTileGenerator implements TileGenerator<TilePos, ByteBuff
 
         }
 
-        int size = 16 * 16 * 3;
-        ByteBuffer imageBuffer = ByteBuffer.allocateDirect(size);
+        ByteBuffer imageBuffer = ByteBuffer.allocateDirect(16 * 16 * 4);
 
         int level = tilePos.level();
         for (int z = 0; z < 16; z++) {
@@ -29,6 +28,7 @@ public class DetailBasedTileGenerator implements TileGenerator<TilePos, ByteBuff
                 imageBuffer.put(val);
                 imageBuffer.put(val);
                 imageBuffer.put(val);
+                imageBuffer.put((byte)255);
             }
         }
 

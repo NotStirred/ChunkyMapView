@@ -1,9 +1,9 @@
 package io.github.notstirred.chunkymapview.render;
 
-import io.github.notstirred.chunkymapview.tile.DetailBasedTile;
-import io.github.notstirred.chunkymapview.tile.TilePos;
-import io.github.notstirred.chunkymapview.util.GlUtils;
+import io.github.notstirred.chunkymapview.MapView;
+import io.github.notstirred.chunkymapview.util.GLUtils;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
+import io.github.notstirred.chunkymapview.util.gl.AreaTexture;
 import io.github.notstirred.chunkymapview.util.vec.MutVec2f;
 import io.github.notstirred.chunkymapview.util.vec.Vec2f;
 import org.joml.Matrix4f;
@@ -14,7 +14,7 @@ import org.lwjgl.system.MemoryStack;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.Map;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
@@ -94,7 +94,7 @@ public class Renderer {
         texLoc = glGetUniformLocation(planeProgram, "tex");
     }
 
-    public boolean render(Collection<DetailBasedTile> tiles, MutableAABBf2d viewExtents) {
+    public boolean render(Map<MapView.RegionPos, AreaTexture> textures, MutableAABBf2d viewExtents) {
         if(glfwWindowShouldClose(window))
             return false;
 
@@ -135,17 +135,18 @@ public class Renderer {
             }
 
             float[] mvpArray = new float[16];
-            for (DetailBasedTile tile : tiles) {
-                if(tile.texture() == null)
-                    continue;
+            for (Map.Entry<MapView.RegionPos, AreaTexture> entry : textures.entrySet()) {
+                MapView.RegionPos pos = entry.getKey();
+                AreaTexture texture = entry.getValue();
 
                 //select texture unit 0
                 glActiveTexture(GL_TEXTURE0);
                 //bind our texture to the active 2D texture unit
-                glBindTexture(GL_TEXTURE_2D, tile.texture().id());
+                texture.bind();
 
-                TilePos pos = tile.pos();
-                Matrix4f mvp = new Matrix4f(vp).translate(new Vector3f(pos.x() << pos.level(), -pos.level(), pos.z() << pos.level())).scale(1 << pos.level());
+                int shift = MapView.RegionPos.REGION_BITS + pos.level();
+
+                Matrix4f mvp = new Matrix4f(vp).translate(new Vector3f(pos.x() << shift, -pos.level(), pos.z() << shift)).scale((1 << shift));
 
                 mvp.get(mvpArray);
 
@@ -155,7 +156,6 @@ public class Renderer {
                 Vector3f color = colorsByScale[pos.level() & 7];
                 glUniform4f(colorLoc, color.x, color.y, color.z, 1);
                 glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, 0);
-
             }
 
             glBindVertexArray(0);
@@ -193,15 +193,15 @@ public class Renderer {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
 
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         glfwSetCursorPos(window, width/2.0, height/2.0);
 
         createPlaneBufferObjects();
 //        createTexture();
         try {
-            planeProgram = GlUtils.createQuadProgram("tile.vs", "tile.fs");
+            planeProgram = GLUtils.createQuadProgram("tile.vs", "tile.fs");
         } catch (IOException e) {
             e.printStackTrace(System.err);
         }

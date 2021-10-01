@@ -4,11 +4,15 @@ import io.github.notstirred.chunkymapview.concurrent.SimpleTaskPool;
 import io.github.notstirred.chunkymapview.tile.Tile;
 import io.github.notstirred.chunkymapview.tile.TilePos;
 import io.github.notstirred.chunkymapview.tile.gen.TileGenerator;
-import io.github.notstirred.chunkymapview.util.RecyclingSupplier;
-import io.github.notstirred.chunkymapview.util.gl.ReusableGLTexture;
+import io.github.notstirred.chunkymapview.util.MathUtil;
+import io.github.notstirred.chunkymapview.util.gl.AreaTexture;
+import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -25,28 +29,66 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>,
 
     protected final TileGenerator<POS, DATA> tileGenerator = this.tileGenerator0();
 
-    private final RecyclingSupplier<ReusableGLTexture> textureSupplier = new RecyclingSupplier<ReusableGLTexture>() {
-        @Override
-        protected ReusableGLTexture allocate0() {
-            return new ReusableGLTexture(16, 16, GL_RGB8, GL_UNSIGNED_BYTE, GL_TEXTURE_2D, GL_RGB, GL_LINEAR, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    private final Map<RegionPos, AreaTexture> regionTextures = new HashMap<>();
+
+    private AreaTexture create() {
+        return new AreaTexture(16, 16, RegionPos.REGION_DIAMETER_IN_TILES, RegionPos.REGION_DIAMETER_IN_TILES,
+                GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA,
+                GL_LINEAR, GL_LINEAR,
+                GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
+        );
+    }
+
+    public Map<RegionPos, AreaTexture> regionTextures() {
+        return regionTextures;
+    }
+
+    @Data
+    public static class RegionPos {
+        public static final int REGION_DIAMETER_IN_TILES = 64;
+        public static final int REGION_BITS = (int) MathUtil.log2(REGION_DIAMETER_IN_TILES);
+
+        private final int x;
+        private final int z;
+        private final int level;
+
+        private static RegionPos from(TilePos pos) {
+            return new RegionPos(pos.x() >> REGION_BITS, pos.z() >> REGION_BITS, pos.level());
         }
-    };
+    }
 
     @NonNull
     public CompletableFuture<TILE> loadingFuture(POS pos, Executor executor) {
-        CompletableFuture<TILE> tileFuture = CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             TILE tile = createTile0(pos);
             generateTile0(tile);
             return tile;
-        }, executor);
+        }, executor).thenComposeAsync(tile -> {
+            RegionPos regionPos = RegionPos.from(tile.pos());
 
-        tileFuture.thenAcceptAsync(tile -> {
-            ReusableGLTexture texture = this.newTexture();
-            texture.setTexture(tile.data(), false);
-            tile.texture(texture);
+            AreaTexture areaTexture = regionTextures.computeIfAbsent(regionPos, (p) -> this.create());
+            areaTexture.ref();
+
+            areaTexture.set(
+                    (tile.pos().x() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16,
+                    (tile.pos().z() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16,
+                tile.data() //tile.data is never assigned to null, so no race condition
+            );
+            return CompletableFuture.completedFuture(tile);
         }, glThreadExecutor);
+    }
 
-        return tileFuture;
+    public void tileUnloadSync(POS pos) {
+        regionTextures.computeIfPresent(RegionPos.from(pos), (regionPos, texture) -> {
+            texture.deref();
+
+            if (texture.nonePresent()) // no loaded tiles reference this texture, can be unloaded
+                return null;
+
+            //another tile is still using this texture, clear the data for this tile from it
+            texture.set((pos.x() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16, (pos.z() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16, ByteBuffer.allocateDirect(16 * 16 * 4));
+            return texture;
+        });
     }
 
     protected abstract TileGenerator<POS, DATA> tileGenerator0();
@@ -64,13 +106,5 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>,
 
     public void executeScheduledTasks() {
         glThreadExecutor.runTasks();
-    }
-
-    public ReusableGLTexture newTexture() {
-        return textureSupplier.allocate();
-    }
-
-    public void freeTexture(ReusableGLTexture texture) {
-        textureSupplier.release(texture);
     }
 }
