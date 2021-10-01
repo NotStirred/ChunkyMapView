@@ -10,5 +10,9 @@ uniform sampler2D tex;
 out vec4 frag_color;
 
 void main() {
-    frag_color = texture(tex, texCoord) * in_color;
+    vec4 texColor = texture(tex, texCoord);
+    if(texColor.a < 0.001) //discard fragment if the alpha is low
+        discard;
+
+    frag_color = texColor * in_color;
 }
