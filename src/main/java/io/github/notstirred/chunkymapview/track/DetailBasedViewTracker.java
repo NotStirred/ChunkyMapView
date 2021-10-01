@@ -218,15 +218,14 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
         }
 
         public void unload() {
-            if(this.tileFuture != null) {
-                this.tileFuture.cancel(false);
-            }
-            if(this.tile != null && this.tile.texture() != null) {
-                DetailBasedViewTracker.this.mapView.scheduleTask(() -> {
-                    if(this.tile.texture() != null)
-                        DetailBasedViewTracker.this.mapView.freeTexture(this.tile.texture());
-                });
-            }
+            assert tileFuture != null;
+
+            this.tileFuture.cancel(false);
+            tileFuture.whenComplete((tile, err) -> {
+                if(tile != null) {
+                    DetailBasedViewTracker.this.mapView.scheduleTask(() -> DetailBasedViewTracker.this.mapView.tileUnloadSync(this.pos));
+                }
+            });
         }
     }
 }
