@@ -1,9 +1,9 @@
 package io.github.notstirred.chunkymapview.render;
 
 import io.github.notstirred.chunkymapview.MapView;
-import io.github.notstirred.chunkymapview.util.GLUtils;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
 import io.github.notstirred.chunkymapview.util.gl.AreaTexture;
+import io.github.notstirred.chunkymapview.util.gl.GLUtils;
 import io.github.notstirred.chunkymapview.util.vec.MutVec2f;
 import io.github.notstirred.chunkymapview.util.vec.Vec2f;
 import org.joml.Matrix4f;

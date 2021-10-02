@@ -10,7 +10,6 @@ import io.github.notstirred.chunkymapview.util.MathUtil;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
 import io.github.notstirred.chunkymapview.util.vec.MutVec2f;
 import io.github.notstirred.chunkymapview.util.vec.Vec2i;
-import org.lwjgl.opengl.GLUtil;
 
 import java.nio.ByteBuffer;
 

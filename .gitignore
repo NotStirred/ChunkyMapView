@@ -21,18 +21,7 @@
 *.dll
 
 # Release artifacts.
-/lpcache/
-/bin/
-/latest.json
-/snapshot.json
-/snapshot
-/credentials.json
-/credentials.gpg
 /build/
-/Chunky.nsi
-/release_notes-*.txt
-/chunky.jar
-
 
 # IntelliJ IDEA Project files.
 .idea/*
@@ -41,25 +30,6 @@
 /*.ipr
 /*.iws
 /out/
-/chunky/out/
-/lib/out/
-/releasetools/out/
-/launcher/out/
-
-# Render snapshots from testing.
-/*.png
 
 # Private files.
-/TODO
 .DS_Store
-/tools/appbundler-*.jar
-
-# Python virtual environment.
-/venv/
-requirements.txt
-
-debug.log
-src/native/.idea/
-src/native/build/
-src/native/cmake-build-debug/
-src/native/cmake-build-release/

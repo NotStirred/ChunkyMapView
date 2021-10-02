@@ -3,8 +3,6 @@ package io.github.notstirred.chunkymapview.util.vec;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Objects;
-
 @Data
 @RequiredArgsConstructor
 public class Vec2i {
