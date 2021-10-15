@@ -37,7 +37,7 @@ public class MetaTexture2D extends GLObject {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, edgeClampS);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, edgeClampT);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, this.internalFormat, elementWidth*xCount, elementHeight*zCount, 0, this.format, this.type, (ByteBuffer) null);
+        glTexImage2D(GL_TEXTURE_2D, 0, this.internalFormat, elementWidth*xCount, elementHeight*zCount, 0, this.format, this.type, ByteBuffer.allocateDirect(4 * elementWidth*elementHeight * count));
     }
 
     public void set(int x, int z, ByteBuffer buffer) {
