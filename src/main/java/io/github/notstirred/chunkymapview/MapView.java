@@ -34,7 +34,7 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS>, DATA>
     private ReferenceCountedMetaTexture2D create() {
         return new ReferenceCountedMetaTexture2D(16, 16, RegionPos.REGION_DIAMETER_IN_TILES, RegionPos.REGION_DIAMETER_IN_TILES,
                 GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA,
-                GL_LINEAR, GL_LINEAR,
+                GL_NEAREST, GL_NEAREST,
                 GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
         );
     }
