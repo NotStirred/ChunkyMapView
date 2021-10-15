@@ -70,9 +70,9 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS>, DATA>
             areaTexture.ref();
 
             areaTexture.set(
-                    (tile.pos().x() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16,
-                    (tile.pos().z() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16,
-                tile.data() //tile.data is never assigned to null, so no race condition
+                    tile.pos().x() & (RegionPos.REGION_DIAMETER_IN_TILES-1),
+                    tile.pos().z() & (RegionPos.REGION_DIAMETER_IN_TILES-1),
+                    tile.data() //tile.data is never assigned to null, so no race condition
             );
             return CompletableFuture.completedFuture(tile);
         }, glThreadExecutor);
@@ -87,8 +87,8 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS>, DATA>
 
             //another tile is still using this texture, clear the data for this tile from it
             texture.set(
-                    (pos.x() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16,
-                    (pos.z() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16,
+                    pos.x() & (RegionPos.REGION_DIAMETER_IN_TILES-1),
+                    pos.z() & (RegionPos.REGION_DIAMETER_IN_TILES-1),
                     ByteBuffer.allocateDirect(16 * 16 * 4)
             );
             return texture;

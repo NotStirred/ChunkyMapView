@@ -40,10 +40,10 @@ public class MetaTexture2D extends GLObject {
         glTexImage2D(GL_TEXTURE_2D, 0, this.internalFormat, elementWidth*xCount, elementHeight*zCount, 0, this.format, this.type, ByteBuffer.allocateDirect(4 * elementWidth*elementHeight * count));
     }
 
-    public void set(int x, int z, ByteBuffer buffer) {
+    public void set(int xIdx, int zIdx, ByteBuffer buffer) {
         this.bind();
         glTexSubImage2D(GL_TEXTURE_2D, 0,
-                x, z, this.elementWidth, this.elementHeight,
+                xIdx * elementWidth, zIdx * elementHeight, this.elementWidth, this.elementHeight,
                 this.format, this.type,
                 buffer
         );
