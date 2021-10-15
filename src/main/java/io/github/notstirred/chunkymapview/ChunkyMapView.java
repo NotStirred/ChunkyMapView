@@ -58,7 +58,7 @@ public class ChunkyMapView {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } while (renderer.render(mapView.regionTextures(), viewExtents));
+            } while (renderer.render(mapView.metaTextures(), viewExtents));
         } catch (InterruptedException ignored) { }
     }
 

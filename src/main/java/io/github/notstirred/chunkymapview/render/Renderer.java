@@ -2,7 +2,7 @@ package io.github.notstirred.chunkymapview.render;
 
 import io.github.notstirred.chunkymapview.MapView;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
-import io.github.notstirred.chunkymapview.util.gl.AreaTexture;
+import io.github.notstirred.chunkymapview.util.gl.ReferenceCountedMetaTexture2D;
 import io.github.notstirred.chunkymapview.util.gl.GLUtils;
 import io.github.notstirred.chunkymapview.util.vec.MutVec2f;
 import io.github.notstirred.chunkymapview.util.vec.Vec2f;
@@ -94,7 +94,7 @@ public class Renderer {
         texLoc = glGetUniformLocation(planeProgram, "tex");
     }
 
-    public boolean render(Map<MapView.RegionPos, AreaTexture> textures, MutableAABBf2d viewExtents) {
+    public boolean render(Map<MapView.RegionPos, ReferenceCountedMetaTexture2D> textures, MutableAABBf2d viewExtents) {
         if(glfwWindowShouldClose(window))
             return false;
 
@@ -135,9 +135,9 @@ public class Renderer {
             }
 
             float[] mvpArray = new float[16];
-            for (Map.Entry<MapView.RegionPos, AreaTexture> entry : textures.entrySet()) {
+            for (Map.Entry<MapView.RegionPos, ReferenceCountedMetaTexture2D> entry : textures.entrySet()) {
                 MapView.RegionPos pos = entry.getKey();
-                AreaTexture texture = entry.getValue();
+                ReferenceCountedMetaTexture2D texture = entry.getValue();
 
                 //select texture unit 0
                 glActiveTexture(GL_TEXTURE0);

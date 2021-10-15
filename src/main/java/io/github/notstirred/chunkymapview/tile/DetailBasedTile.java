@@ -7,11 +7,12 @@ import lombok.Setter;
 import java.nio.ByteBuffer;
 
 @RequiredArgsConstructor
-public class DetailBasedTile implements Tile<TilePos, ByteBuffer> {
+public class DetailBasedTile implements Tile<TilePos> {
     private final TilePos pos;
     @Getter @Setter
     private ByteBuffer data;
 
+    @Override
     public TilePos pos() {
         return pos;
     }

@@ -5,7 +5,7 @@ import io.github.notstirred.chunkymapview.tile.Tile;
 import io.github.notstirred.chunkymapview.tile.TilePos;
 import io.github.notstirred.chunkymapview.tile.gen.TileGenerator;
 import io.github.notstirred.chunkymapview.util.MathUtil;
-import io.github.notstirred.chunkymapview.util.gl.AreaTexture;
+import io.github.notstirred.chunkymapview.util.gl.ReferenceCountedMetaTexture2D;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 
 @RequiredArgsConstructor
-public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>, DATA> {
+public abstract class MapView<POS extends TilePos, TILE extends Tile<POS>, DATA> {
     private static final SimpleTaskPool glThreadExecutor = new SimpleTaskPool(Thread.currentThread());
 
     public static Executor glThreadExecutor() {
@@ -29,18 +29,18 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>,
 
     protected final TileGenerator<POS, DATA> tileGenerator = this.tileGenerator0();
 
-    private final Map<RegionPos, AreaTexture> regionTextures = new HashMap<>();
+    private final Map<RegionPos, ReferenceCountedMetaTexture2D> metaTextures = new HashMap<>();
 
-    private AreaTexture create() {
-        return new AreaTexture(16, 16, RegionPos.REGION_DIAMETER_IN_TILES, RegionPos.REGION_DIAMETER_IN_TILES,
+    private ReferenceCountedMetaTexture2D create() {
+        return new ReferenceCountedMetaTexture2D(16, 16, RegionPos.REGION_DIAMETER_IN_TILES, RegionPos.REGION_DIAMETER_IN_TILES,
                 GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA,
                 GL_LINEAR, GL_LINEAR,
                 GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
         );
     }
 
-    public Map<RegionPos, AreaTexture> regionTextures() {
-        return regionTextures;
+    public Map<RegionPos, ReferenceCountedMetaTexture2D> metaTextures() {
+        return metaTextures;
     }
 
     @Data
@@ -66,7 +66,7 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>,
         }, executor).thenComposeAsync(tile -> {
             RegionPos regionPos = RegionPos.from(tile.pos());
 
-            AreaTexture areaTexture = regionTextures.computeIfAbsent(regionPos, (p) -> this.create());
+            ReferenceCountedMetaTexture2D areaTexture = metaTextures.computeIfAbsent(regionPos, (p) -> this.create());
             areaTexture.ref();
 
             areaTexture.set(
@@ -79,14 +79,18 @@ public abstract class MapView<POS extends TilePos, TILE extends Tile<POS, DATA>,
     }
 
     public void tileUnloadSync(POS pos) {
-        regionTextures.computeIfPresent(RegionPos.from(pos), (regionPos, texture) -> {
+        metaTextures.computeIfPresent(RegionPos.from(pos), (regionPos, texture) -> {
             texture.deref();
 
-            if (texture.nonePresent()) // no loaded tiles reference this texture, can be unloaded
+            if (!texture.anyRef()) // no loaded tiles reference this texture, can be unloaded
                 return null;
 
             //another tile is still using this texture, clear the data for this tile from it
-            texture.set((pos.x() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16, (pos.z() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16, ByteBuffer.allocateDirect(16 * 16 * 4));
+            texture.set(
+                    (pos.x() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16,
+                    (pos.z() & (RegionPos.REGION_DIAMETER_IN_TILES-1))*16,
+                    ByteBuffer.allocateDirect(16 * 16 * 4)
+            );
             return texture;
         });
     }
