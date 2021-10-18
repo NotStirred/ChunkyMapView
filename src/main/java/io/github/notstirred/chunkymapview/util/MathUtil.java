@@ -9,6 +9,10 @@ public class MathUtil {
         return (Math.log(N) / Math.log(2));
     }
 
+    public static boolean isPow2(int x) {
+        return (x & (x - 1)) == 0;
+    }
+
     public static int nextPow2(int v) {
         v--;
         v |= v >> 1;
@@ -28,11 +32,7 @@ public class MathUtil {
         return (v & 1) == 1 ? v - 1 : v;
     }
 
-    public static int orThing(int val, int i) {
-        while(i >= 0) {
-            val |= 1 << i;
-            i--;
-        }
-        return val;
+    public static int manhattanDistance(int x1, int z1, int x2, int z2) {
+        return Math.abs(x1 - x2) + Math.abs(z1 - z2);
     }
 }

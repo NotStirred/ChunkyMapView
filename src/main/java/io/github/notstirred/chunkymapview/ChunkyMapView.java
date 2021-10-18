@@ -25,8 +25,7 @@ public class ChunkyMapView {
 
         Renderer renderer = new Renderer();
 
-        MapView<TilePos, DetailBasedTile, ByteBuffer> mapView = new DetailBasedMapView();
-        ViewTracker<TilePos, DetailBasedView, DetailBasedTile> tracker = new DetailBasedViewTracker(mapView);
+        MapView<TilePos, DetailBasedView, DetailBasedTile, ByteBuffer> mapView = new DetailBasedMapView();
 
         MutVec2f viewPos = new MutVec2f(0, 0);
         MutVec2f viewSize = new MutVec2f(128, 72);
@@ -36,14 +35,15 @@ public class ChunkyMapView {
         long timeLastFrame;
 
         long startTime = System.currentTimeMillis();
+        int level = 0;
         try {
             do {
                 renderer.update(viewPos, viewSize);
                 viewExtents.maxExtents().set(viewPos.added(viewSize));
 
-                int level = Math.min(MAX_LEVEL, calculateHighestLevelForView(viewExtents.size().toIntVec(), viewResolution.toIntVec().toImmutable()));
+                level = Math.min(MAX_LEVEL, calculateHighestLevelForView(viewExtents.size().toIntVec(), viewResolution.toIntVec().toImmutable()));
                 DetailBasedView detailBasedView = new DetailBasedView(viewResolution.toIntVec().toImmutable(), viewExtents.toExpandedIntBox().toImmutable(), level, Math.min(level + 16, MAX_LEVEL), PADDING);
-                tracker.viewUpdated(detailBasedView);
+                mapView.viewTracker.viewUpdated(detailBasedView);
 
                 timeLastFrame = System.currentTimeMillis() - startTime;
 
@@ -58,7 +58,7 @@ public class ChunkyMapView {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } while (renderer.render(mapView.metaTextures(), viewExtents));
+            } while (renderer.render(level, mapView.metaTextures(), viewExtents));
         } catch (InterruptedException ignored) { }
     }
 

@@ -1,15 +1,18 @@
 package io.github.notstirred.chunkymapview.render;
 
 import io.github.notstirred.chunkymapview.MapView;
+import io.github.notstirred.chunkymapview.tile.SortedCache;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
-import io.github.notstirred.chunkymapview.util.gl.ReferenceCountedMetaTexture2D;
 import io.github.notstirred.chunkymapview.util.gl.GLUtils;
+import io.github.notstirred.chunkymapview.util.gl.ReferenceTrackingMetaTexture2D;
 import io.github.notstirred.chunkymapview.util.vec.MutVec2f;
 import io.github.notstirred.chunkymapview.util.vec.Vec2f;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.MemoryStack;
 
 import java.io.IOException;
@@ -94,7 +97,7 @@ public class Renderer {
         texLoc = glGetUniformLocation(planeProgram, "tex");
     }
 
-    public boolean render(Map<MapView.RegionPos, ReferenceCountedMetaTexture2D> textures, MutableAABBf2d viewExtents) {
+    public boolean render(int highestLevel, SortedCache<MapView.RegionPos, ReferenceTrackingMetaTexture2D>[] texturesByLOD, MutableAABBf2d viewExtents) {
         if(glfwWindowShouldClose(window))
             return false;
 
@@ -124,7 +127,7 @@ public class Renderer {
 
                 vp = proj.mul(view);
             } else {
-                Matrix4f proj = new Matrix4f().perspective((float) Math.toRadians(70.0f), (float) width / (float)height, 0.1f, 10000.0f);
+                Matrix4f proj = new Matrix4f().perspective((float) Math.toRadians(70.0f), (float) width / (float)height, 0.1f, 1000000.0f);
                 Matrix4f view = new Matrix4f().lookAt(
                         cameraPos,
                         new Vector3f(cameraPos).add(cameraDir),
@@ -135,29 +138,31 @@ public class Renderer {
             }
 
             float[] mvpArray = new float[16];
-            for (Map.Entry<MapView.RegionPos, ReferenceCountedMetaTexture2D> entry : textures.entrySet()) {
-                MapView.RegionPos pos = entry.getKey();
-                ReferenceCountedMetaTexture2D texture = entry.getValue();
+            for (int i = texturesByLOD.length-1; i >= highestLevel; i--) {
+                SortedCache<MapView.RegionPos, ReferenceTrackingMetaTexture2D> textures = texturesByLOD[i];
+                for (Map.Entry<MapView.RegionPos, ReferenceTrackingMetaTexture2D> entry : textures.entrySet()) {
+                    MapView.RegionPos pos = entry.getKey();
+                    ReferenceTrackingMetaTexture2D texture = entry.getValue();
 
-                //select texture unit 0
-                glActiveTexture(GL_TEXTURE0);
-                //bind our texture to the active 2D texture unit
-                texture.bind();
+                    //select texture unit 0
+                    glActiveTexture(GL_TEXTURE0);
+                    //bind our texture to the active 2D texture unit
+                    texture.bind();
 
-                int shift = MapView.RegionPos.REGION_BITS + pos.level();
+                    int shift = MapView.RegionPos.REGION_BITS + pos.level();
 
-                Matrix4f mvp = new Matrix4f(vp).translate(new Vector3f(pos.x() << shift, -pos.level(), pos.z() << shift)).scale((1 << shift));
+                    Matrix4f mvp = new Matrix4f(vp).translate(new Vector3f(pos.x() << shift, -pos.level(), pos.z() << shift)).scale((1 << shift));
 
-                mvp.get(mvpArray);
+                    mvp.get(mvpArray);
 
-                glUniform1i(texLoc, 0); //set texture unit 0
+                    glUniform1i(texLoc, 0); //set texture unit 0
 
-                glUniformMatrix4fv(mvpLoc, false, mvpArray);
-                Vector3f color = colorsByScale[pos.level() & 7];
-                glUniform4f(colorLoc, color.x, color.y, color.z, 1);
-                glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, 0);
+                    glUniformMatrix4fv(mvpLoc, false, mvpArray);
+                    Vector3f color = colorsByScale[pos.level() & 7];
+                    glUniform4f(colorLoc, color.x, color.y, color.z, 1);
+                    glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, 0);
+                }
             }
-
             glBindVertexArray(0);
             glUseProgram(0);
         }
@@ -168,6 +173,9 @@ public class Renderer {
 
     private void init() {
         glfwInit();
+        glfwSetErrorCallback(GLFWErrorCallback.createPrint(System.err));
+
+
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -185,6 +193,7 @@ public class Renderer {
             height = framebufferSize.get(1);
         }
         GL.createCapabilities();
+        GLUtil.setupDebugMessageCallback(System.err);
 
         glfwSwapInterval(0);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -199,7 +208,6 @@ public class Renderer {
         glfwSetCursorPos(window, width/2.0, height/2.0);
 
         createPlaneBufferObjects();
-//        createTexture();
         try {
             planeProgram = GLUtils.createQuadProgram("tile.vs", "tile.fs");
         } catch (IOException e) {

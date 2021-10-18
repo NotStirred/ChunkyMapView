@@ -74,11 +74,11 @@ dependencies {
     testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
 }
 
-project.setProperty("mainClassName", "io.github.notstirred.ChunkyMapView")
+project.setProperty("mainClassName", "io.github.notstirred.chunkymapview.ChunkyMapView")
 
 jar {
     manifest {
-        attributes 'Main-Class': 'io.github.notstirred.ChunkyMapView'
+        attributes 'Main-Class': 'io.github.notstirred.chunkymapview.ChunkyMapView'
 
     }
 }

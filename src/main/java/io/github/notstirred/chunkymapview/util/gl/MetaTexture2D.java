@@ -1,5 +1,8 @@
 package io.github.notstirred.chunkymapview.util.gl;
 
+import io.github.notstirred.chunkymapview.util.MathUtil;
+import io.github.notstirred.chunkymapview.util.Validation;
+
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -25,7 +28,9 @@ public class MetaTexture2D extends GLObject {
         this.type = type;
         this.elementWidth = elementWidth;
         this.elementHeight = elementHeight;
+        Validation.check(MathUtil.isPow2(xCount), "xCount must be a power of two");
         this.xCount = xCount;
+        Validation.check(MathUtil.isPow2(zCount), "zCount must be a power of two");
         this.zCount = zCount;
         this.count = xCount*zCount;
 

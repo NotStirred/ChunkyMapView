@@ -9,12 +9,12 @@ import io.github.notstirred.chunkymapview.util.vec.Vec2i;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+
+import static io.github.notstirred.chunkymapview.util.MathUtil.manhattanDistance;
 
 /**
  * This is used for both tracking tiles that should be generated, and also frustum culling
@@ -32,7 +32,7 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
 
     private final Executor generationExecutor = Executors.newFixedThreadPool(THREAD_COUNT);
 
-    private final MapView<TilePos, DetailBasedTile, ByteBuffer> mapView;
+    private final MapView<TilePos, DetailBasedView, DetailBasedTile, ByteBuffer> mapView;
 
     private final Map<TilePos, Entry> entries = new ConcurrentHashMap<>();
 
@@ -67,13 +67,9 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
             addRemoveDiff(oldView, newView,
                 tilePos -> Validation.check(this.requiredPositions.add(tilePos), "Position already queued!"),
                 tilePos -> {
-                    this.entries.computeIfPresent(tilePos, (pos, entry) -> {
-                        entry.unload();
-                        return null;
-                    });
                     //the position will not be in these sets if it has not been generated yet
-                    this.loadedPositions.remove(tilePos);
                     this.waitingPositions.remove(tilePos);
+                    this.loadedPositions.remove(tilePos);
                 }
             );
         } else {
@@ -81,15 +77,17 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
         }
 
         TilePos[] positions = this.requiredPositions.toArray(new TilePos[0]);
-        Vec2i centrePosition = newView.extents().minExtents().added(newView.extents().size().scaled(0.5f));
+        Vec2i centrePosition = viewCentre();
         Arrays.sort(positions, (pos1, pos2) -> {
             int levelDiff = -Integer.compare(pos1.level(), pos2.level());
 
             if(levelDiff == 0) {
                 int level = pos1.level(); //must be the level of both, as the difference is 0
 
-                return Integer.compare(manhattanDistance(centrePosition.x() >> level, centrePosition.y() >> level, pos1.x(), pos1.z()),
-                        manhattanDistance(centrePosition.x() >> level, centrePosition.y() >> level, pos2.x(), pos2.z()));
+                return Integer.compare(
+                        manhattanDistance(centrePosition.x() >> level, centrePosition.y() >> level, pos1.x(), pos1.z()),
+                        manhattanDistance(centrePosition.x() >> level, centrePosition.y() >> level, pos2.x(), pos2.z())
+                );
             } else
                 return levelDiff;
         });
@@ -183,23 +181,17 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
     }
 
     private void tileCompleted(DetailBasedTile tile) {
-        this.loadedPositions.add(tile.pos());
         this.waitingPositions.remove(tile.pos());
+        this.loadedPositions.add(tile.pos());
         this.fillWaiting();
     }
 
-    public static int manhattanDistance(int x1, int z1, int x2, int z2) {
-        return Math.abs(x1 - x2) + Math.abs(z1 - z2);
-    }
-
-    public Collection<DetailBasedTile> tiles() {
-        return this.entries.values().stream().map(entry -> entry.tile).filter(Objects::nonNull).collect(Collectors.toList());
+    @Override
+    public Vec2i viewCentre() {
+        return oldView.extents().minExtents().added(oldView.extents().size().scaled(0.5f));
     }
 
     private class Entry {
-        @Nullable
-        private DetailBasedTile tile;
-
         private CompletableFuture<DetailBasedTile> tileFuture;
 
         private final TilePos pos;
@@ -211,21 +203,7 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
 
         public void schedule() {
             this.tileFuture = DetailBasedViewTracker.this.mapView.loadingFuture(this.pos, DetailBasedViewTracker.this.generationExecutor);
-            this.tileFuture.thenAcceptAsync((tile) -> {
-                this.tile = tile;
-                DetailBasedViewTracker.this.tileCompleted(tile);
-            }, DetailBasedViewTracker.this.trackerExecutor);
-        }
-
-        public void unload() {
-            assert tileFuture != null;
-
-            this.tileFuture.cancel(false);
-            tileFuture.whenComplete((tile, err) -> {
-                if(tile != null) {
-                    DetailBasedViewTracker.this.mapView.scheduleTask(() -> DetailBasedViewTracker.this.mapView.tileUnloadSync(this.pos));
-                }
-            });
+            this.tileFuture.thenAcceptAsync(DetailBasedViewTracker.this::tileCompleted, DetailBasedViewTracker.this.trackerExecutor);
         }
     }
 }
