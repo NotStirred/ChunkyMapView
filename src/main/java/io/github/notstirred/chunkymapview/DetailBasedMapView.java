@@ -10,6 +10,10 @@ import io.github.notstirred.chunkymapview.track.ViewTracker;
 import java.nio.ByteBuffer;
 
 public class DetailBasedMapView extends MapView<TilePos, DetailBasedView, DetailBasedTile, ByteBuffer> {
+    public DetailBasedMapView(int cacheSizeMiB) {
+        super(cacheSizeMiB);
+    }
+
     @Override
     protected ViewTracker<TilePos, DetailBasedView, DetailBasedTile> viewTracker0(MapView<TilePos, DetailBasedView, DetailBasedTile, ByteBuffer> mapView) {
         return new DetailBasedViewTracker(mapView);

@@ -36,11 +36,18 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
     @SuppressWarnings("unchecked")
     private final SortedCache<RegionPos, ReferenceTrackingMetaTexture2D>[] metaTextures = new SortedCache[32];
 
-    public MapView() {
+    public MapView(int cacheSizeMiB) {
+        int bytesPerTile = 4 * 16*16;
+        int bytesPerMetaTexture = bytesPerTile * RegionPos.REGION_DIAMETER_IN_TILES*RegionPos.REGION_DIAMETER_IN_TILES;
+
+        int cacheSizeBytes = cacheSizeMiB * 1024*1024;
+
+        int cacheSize = cacheSizeBytes / bytesPerMetaTexture;
+
         this.viewTracker = viewTracker0(this);
         for (int level = 0; level < metaTextures.length; level++) {
             int finalLevel = level;
-            metaTextures[level] = new SortedCache<>(512, (pos1, pos2) -> {
+            metaTextures[level] = new SortedCache<>(cacheSize, (pos1, pos2) -> {
                 Vec2i centre = viewTracker.viewCentre();
                 return Integer.compare(
                         manhattanDistance(centre.x() >> finalLevel + RegionPos.REGION_BITS, centre.y() >> finalLevel + RegionPos.REGION_BITS, pos1.x(), pos1.z()),
@@ -64,7 +71,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
 
     @Data
     public static class RegionPos {
-        public static final int REGION_DIAMETER_IN_TILES = 64;
+        public static final int REGION_DIAMETER_IN_TILES = 16;
         public static final int REGION_BITS = (int) MathUtil.log2(REGION_DIAMETER_IN_TILES);
 
         private final int x;

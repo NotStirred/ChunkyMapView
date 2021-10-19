@@ -25,7 +25,7 @@ public class ChunkyMapView {
 
         Renderer renderer = new Renderer();
 
-        MapView<TilePos, DetailBasedView, DetailBasedTile, ByteBuffer> mapView = new DetailBasedMapView();
+        MapView<TilePos, DetailBasedView, DetailBasedTile, ByteBuffer> mapView = new DetailBasedMapView(64);
 
         MutVec2f viewPos = new MutVec2f(0, 0);
         MutVec2f viewSize = new MutVec2f(128, 72);
