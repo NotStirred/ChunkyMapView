@@ -13,12 +13,13 @@ import java.util.function.Function;
  * Cache that sorts when full, and removes the last 20% of elements
  */
 @RequiredArgsConstructor
-public class SortedCache<K, V> {
+public class SortedCache<K, V> implements SizedCache<K, V> {
     private final int maxSize;
     private final Comparator<K> comparator;
     
     private final Map<K, V> cachedPositions = new HashMap<>();
     
+    @Override
     public void put(K key, V val) {
         this.cachedPositions.put(key, val);
 
@@ -27,10 +28,12 @@ public class SortedCache<K, V> {
         }
     }
 
+    @Override
     public synchronized V get(K key) {
         return cachedPositions.get(key);
     }
 
+    @Override
     public synchronized V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
         V v = cachedPositions.computeIfAbsent(key, mappingFunction);
 
@@ -41,6 +44,7 @@ public class SortedCache<K, V> {
         return v;
     }
 
+    @Override
     public synchronized V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> mappingFunction) {
         return cachedPositions.computeIfPresent(key, mappingFunction);
     }
@@ -57,5 +61,15 @@ public class SortedCache<K, V> {
 
     public synchronized Iterable<? extends Map.Entry<K, V>> entrySet() {
         return cachedPositions.entrySet();
+    }
+
+    @Override
+    public int size() {
+        return this.cachedPositions.size();
+    }
+
+    @Override
+    public int maxSize() {
+        return this.maxSize;
     }
 }

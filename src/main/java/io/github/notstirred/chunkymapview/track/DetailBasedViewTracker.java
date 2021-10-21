@@ -183,12 +183,18 @@ public class DetailBasedViewTracker implements ViewTracker<TilePos, DetailBasedV
     private void tileCompleted(DetailBasedTile tile) {
         this.waitingPositions.remove(tile.pos());
         this.loadedPositions.add(tile.pos());
+        this.entries.remove(tile.pos());
         this.fillWaiting();
     }
 
     @Override
     public Vec2i viewCentre() {
         return oldView.extents().minExtents().added(oldView.extents().size().scaled(0.5f));
+    }
+
+    @Override
+    public DetailBasedView view() {
+        return oldView;
     }
 
     private class Entry {

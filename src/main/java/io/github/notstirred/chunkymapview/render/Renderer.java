@@ -1,6 +1,7 @@
 package io.github.notstirred.chunkymapview.render;
 
 import io.github.notstirred.chunkymapview.MapView;
+import io.github.notstirred.chunkymapview.tile.SizedCache;
 import io.github.notstirred.chunkymapview.tile.SortedCache;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
 import io.github.notstirred.chunkymapview.util.gl.GLUtils;
@@ -97,7 +98,7 @@ public class Renderer {
         texLoc = glGetUniformLocation(planeProgram, "tex");
     }
 
-    public boolean render(int highestLevel, SortedCache<MapView.RegionPos, ReferenceTrackingMetaTexture2D>[] texturesByLOD, MutableAABBf2d viewExtents) {
+    public boolean render(int highestLevel, SizedCache<MapView.RegionPos, ReferenceTrackingMetaTexture2D> textures, MutableAABBf2d viewExtents) {
         if(glfwWindowShouldClose(window))
             return false;
 
@@ -138,30 +139,30 @@ public class Renderer {
             }
 
             float[] mvpArray = new float[16];
-            for (int i = texturesByLOD.length-1; i >= highestLevel; i--) {
-                SortedCache<MapView.RegionPos, ReferenceTrackingMetaTexture2D> textures = texturesByLOD[i];
-                for (Map.Entry<MapView.RegionPos, ReferenceTrackingMetaTexture2D> entry : textures.entrySet()) {
-                    MapView.RegionPos pos = entry.getKey();
-                    ReferenceTrackingMetaTexture2D texture = entry.getValue();
+            for (Map.Entry<MapView.RegionPos, ReferenceTrackingMetaTexture2D> entry : ((SortedCache<MapView.RegionPos, ReferenceTrackingMetaTexture2D>)textures).entrySet()) {
+                MapView.RegionPos pos = entry.getKey();
+                if(pos.level() < highestLevel)
+                    continue;
 
-                    //select texture unit 0
-                    glActiveTexture(GL_TEXTURE0);
-                    //bind our texture to the active 2D texture unit
-                    texture.bind();
+                ReferenceTrackingMetaTexture2D texture = entry.getValue();
 
-                    int shift = MapView.RegionPos.REGION_BITS + pos.level();
+                //select texture unit 0
+                glActiveTexture(GL_TEXTURE0);
+                //bind our texture to the active 2D texture unit
+                texture.bind();
 
-                    Matrix4f mvp = new Matrix4f(vp).translate(new Vector3f(pos.x() << shift, -pos.level(), pos.z() << shift)).scale((1 << shift));
+                int shift = MapView.RegionPos.REGION_BITS + pos.level();
 
-                    mvp.get(mvpArray);
+                Matrix4f mvp = new Matrix4f(vp).translate(new Vector3f(pos.x() << shift, -pos.level(), pos.z() << shift)).scale((1 << shift) * 0.95f);
 
-                    glUniform1i(texLoc, 0); //set texture unit 0
+                mvp.get(mvpArray);
 
-                    glUniformMatrix4fv(mvpLoc, false, mvpArray);
-                    Vector3f color = colorsByScale[pos.level() & 7];
-                    glUniform4f(colorLoc, color.x, color.y, color.z, 1);
-                    glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, 0);
-                }
+                glUniform1i(texLoc, 0); //set texture unit 0
+
+                glUniformMatrix4fv(mvpLoc, false, mvpArray);
+                Vector3f color = colorsByScale[pos.level() & 7];
+                glUniform4f(colorLoc, color.x, color.y, color.z, 1);
+                glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, 0);
             }
             glBindVertexArray(0);
             glUseProgram(0);

@@ -4,8 +4,6 @@ import io.github.notstirred.chunkymapview.render.Renderer;
 import io.github.notstirred.chunkymapview.tile.DetailBasedTile;
 import io.github.notstirred.chunkymapview.tile.TilePos;
 import io.github.notstirred.chunkymapview.track.DetailBasedView;
-import io.github.notstirred.chunkymapview.track.DetailBasedViewTracker;
-import io.github.notstirred.chunkymapview.track.ViewTracker;
 import io.github.notstirred.chunkymapview.util.MathUtil;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
 import io.github.notstirred.chunkymapview.util.vec.MutVec2f;
@@ -35,14 +33,14 @@ public class ChunkyMapView {
         long timeLastFrame;
 
         long startTime = System.currentTimeMillis();
-        int level = 0;
+        int level;
         try {
             do {
                 renderer.update(viewPos, viewSize);
                 viewExtents.maxExtents().set(viewPos.added(viewSize));
 
                 level = Math.min(MAX_LEVEL, calculateHighestLevelForView(viewExtents.size().toIntVec(), viewResolution.toIntVec().toImmutable()));
-                DetailBasedView detailBasedView = new DetailBasedView(viewResolution.toIntVec().toImmutable(), viewExtents.toExpandedIntBox().toImmutable(), level, Math.min(level + 16, MAX_LEVEL), PADDING);
+                DetailBasedView detailBasedView = new DetailBasedView(viewResolution.toIntVec().toImmutable(), viewExtents.toExpandedIntBox().toImmutable(), level, Math.min(level + 3, MAX_LEVEL), PADDING);
                 mapView.viewTracker.viewUpdated(detailBasedView);
 
                 timeLastFrame = System.currentTimeMillis() - startTime;
@@ -58,7 +56,7 @@ public class ChunkyMapView {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } while (renderer.render(level, mapView.metaTextures(), viewExtents));
+            } while (renderer.render(level, mapView.textureCache(), viewExtents));
         } catch (InterruptedException ignored) { }
     }
 

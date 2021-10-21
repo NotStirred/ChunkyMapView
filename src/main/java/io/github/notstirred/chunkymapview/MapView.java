@@ -1,6 +1,7 @@
 package io.github.notstirred.chunkymapview;
 
 import io.github.notstirred.chunkymapview.concurrent.SimpleTaskPool;
+import io.github.notstirred.chunkymapview.tile.SizedCache;
 import io.github.notstirred.chunkymapview.tile.SortedCache;
 import io.github.notstirred.chunkymapview.tile.Tile;
 import io.github.notstirred.chunkymapview.tile.TilePos;
@@ -9,7 +10,6 @@ import io.github.notstirred.chunkymapview.track.View;
 import io.github.notstirred.chunkymapview.track.ViewTracker;
 import io.github.notstirred.chunkymapview.util.MathUtil;
 import io.github.notstirred.chunkymapview.util.gl.ReferenceTrackingMetaTexture2D;
-import io.github.notstirred.chunkymapview.util.vec.Vec2i;
 import lombok.Data;
 import lombok.Getter;
 
@@ -17,7 +17,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-import static io.github.notstirred.chunkymapview.util.MathUtil.manhattanDistance;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 
@@ -33,28 +32,11 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
     @Getter
     protected final ViewTracker<POS, VIEW, TILE> viewTracker;
 
-    @SuppressWarnings("unchecked")
-    private final SortedCache<RegionPos, ReferenceTrackingMetaTexture2D>[] metaTextures = new SortedCache[32];
+    private final SizedCache<RegionPos, ReferenceTrackingMetaTexture2D> textureCache;
 
     public MapView(int cacheSizeMiB) {
-        int bytesPerTile = 4 * 16*16;
-        int bytesPerMetaTexture = bytesPerTile * RegionPos.REGION_DIAMETER_IN_TILES*RegionPos.REGION_DIAMETER_IN_TILES;
-
-        int cacheSizeBytes = cacheSizeMiB * 1024*1024;
-
-        int cacheSize = cacheSizeBytes / bytesPerMetaTexture;
-
         this.viewTracker = viewTracker0(this);
-        for (int level = 0; level < metaTextures.length; level++) {
-            int finalLevel = level;
-            metaTextures[level] = new SortedCache<>(cacheSize, (pos1, pos2) -> {
-                Vec2i centre = viewTracker.viewCentre();
-                return Integer.compare(
-                        manhattanDistance(centre.x() >> finalLevel + RegionPos.REGION_BITS, centre.y() >> finalLevel + RegionPos.REGION_BITS, pos1.x(), pos1.z()),
-                        manhattanDistance(centre.x() >> finalLevel + RegionPos.REGION_BITS, centre.y() >> finalLevel + RegionPos.REGION_BITS, pos2.x(), pos2.z())
-                );
-            });
-        }
+        this.textureCache = cache0(cacheSizeMiB);
     }
 
     private ReferenceTrackingMetaTexture2D create() {
@@ -65,8 +47,8 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
         );
     }
 
-    public SortedCache<RegionPos, ReferenceTrackingMetaTexture2D>[] metaTextures() {
-        return metaTextures;
+    public SizedCache<RegionPos, ReferenceTrackingMetaTexture2D> textureCache() {
+        return textureCache;
     }
 
     @Data
@@ -88,7 +70,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
             int xIdx = pos.x() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
             int zIdx = pos.z() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
 
-            ReferenceTrackingMetaTexture2D texture = metaTextures[pos.level()].get(RegionPos.from(pos));
+            ReferenceTrackingMetaTexture2D texture = textureCache.get(RegionPos.from(pos));
             //if texture exists, and is already tracking this tile, we just return an empty tile for this position
             if (texture != null && texture.contains(xIdx, zIdx)) {
                 return CompletableFuture.completedFuture(createTile0(pos));
@@ -102,7 +84,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
         }, executor).thenComposeAsync(tile -> {
             RegionPos regionPos = RegionPos.from(tile.pos());
 
-            ReferenceTrackingMetaTexture2D areaTexture = metaTextures[pos.level()].computeIfAbsent(regionPos, (p) -> this.create());
+            ReferenceTrackingMetaTexture2D areaTexture = textureCache.computeIfAbsent(regionPos, (p) -> this.create());
 
             int xIdx = tile.pos().x() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
             int zIdx = tile.pos().z() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
@@ -113,7 +95,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
     }
 
     public void tileUnloadSync(POS pos) {
-        metaTextures[pos.level()].computeIfPresent(RegionPos.from(pos), (regionPos, texture) -> {
+        textureCache.computeIfPresent(RegionPos.from(pos), (regionPos, texture) -> {
             int xIdx = pos.x() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
             int zIdx = pos.z() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
             texture.deref(xIdx, zIdx);
@@ -126,6 +108,8 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
             return texture;
         });
     }
+
+    protected abstract SizedCache<RegionPos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB);
 
     protected abstract ViewTracker<POS, VIEW, TILE> viewTracker0(MapView<POS, VIEW, TILE, DATA> mapView);
 
