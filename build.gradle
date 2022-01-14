@@ -9,7 +9,8 @@ plugins {
 group 'io.github.notstirred'
 version '1.0-SNAPSHOT'
 
-project.ext.lwjglVersion = "3.2.3"
+project.ext.lwjglVersion = "3.3.0"
+project.ext.jomlVersion = "1.10.3"
 
 ext {
     junitVersion = '4.13.2'
@@ -24,7 +25,7 @@ switch (OperatingSystem.current()) {
                 : "natives-linux"
         break
     case OperatingSystem.MAC_OS:
-        project.ext.lwjglNatives = natives-macos
+        project.ext.lwjglNatives = System.getProperty("os.arch").startsWith("aarch64") ? "natives-macos-arm64" : "natives-macos"
         break
     case OperatingSystem.WINDOWS:
         def osArch = System.getProperty("os.arch")
@@ -53,21 +54,24 @@ dependencies {
 
     implementation "org.spongepowered:noise:2.0.0-SNAPSHOT"
     implementation "com.google.guava:guava:30.1.1-jre"
-    implementation "org.joml:joml:1.9.2"
 
     implementation "net.daporkchop.lib:unsafe:0.5.5-SNAPSHOT"
 
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
 
-    implementation "org.lwjgl:lwjgl:$lwjglVersion"
-    implementation "org.lwjgl:lwjgl-glfw:$lwjglVersion"
-    implementation "org.lwjgl:lwjgl-opengl:$lwjglVersion"
-    implementation "org.lwjgl:lwjgl-stb:$lwjglVersion"
-    runtimeOnly "org.lwjgl:lwjgl:$lwjglVersion"
-    runtimeOnly "org.lwjgl:lwjgl-glfw:$lwjglVersion"
-    runtimeOnly "org.lwjgl:lwjgl-opengl:$lwjglVersion"
-    runtimeOnly "org.lwjgl:lwjgl-stb:$lwjglVersion"
-    if (lwjglNatives == "natives-macos") runtimeOnly "org.lwjgl:lwjgl-vulkan::$lwjglNatives"
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-assimp"
+    implementation "org.lwjgl:lwjgl-glfw"
+    implementation "org.lwjgl:lwjgl-opengl"
+    implementation "org.lwjgl:lwjgl-stb"
+    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+    implementation "org.joml:joml:${jomlVersion}"
 
     testCompileOnly "junit:junit:$junitVersion"
     testCompileOnly "org.projectlombok:lombok:$lombokVersion"
