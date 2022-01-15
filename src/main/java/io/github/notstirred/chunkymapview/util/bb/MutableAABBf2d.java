@@ -51,6 +51,10 @@ public class MutableAABBf2d {
         return new AABBi2d(this.minExtents.toImmutable().toIntVec(), this.maxExtents.toImmutable().toIntVec());
     }
 
+    public AABBi2d toIntBoxCeil() {
+        return new AABBi2d(this.minExtents.toImmutable().toIntVecCeil(), this.maxExtents.toImmutable().toIntVecCeil());
+    }
+
     public MutableAABBi2d toExpandedIntBox() {
         return new MutableAABBi2d((int) this.minExtents.x(), (int) this.minExtents.y(),
                 (int) Math.ceil(this.maxExtents.x()), (int) Math.ceil(this.maxExtents.y()));

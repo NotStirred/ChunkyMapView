@@ -39,7 +39,7 @@ public class ChunkyMapView {
                 renderer.update(viewPos, viewSize);
                 viewExtents.maxExtents().set(viewPos.added(viewSize));
 
-                level = Math.min(MAX_LEVEL, calculateHighestLevelForView(viewExtents.size().toIntVec(), viewResolution.toIntVec().toImmutable()));
+                level = Math.min(MAX_LEVEL, calculateHighestLevelForView(viewExtents.size().toIntVecCeil(), viewResolution.toIntVecCeil().toImmutable()));
                 DetailBasedView detailBasedView = new DetailBasedView(viewResolution.toIntVec().toImmutable(), viewExtents.toExpandedIntBox().toImmutable(), level, Math.min(level + 3, MAX_LEVEL), PADDING);
                 mapView.viewTracker.viewUpdated(detailBasedView);
 

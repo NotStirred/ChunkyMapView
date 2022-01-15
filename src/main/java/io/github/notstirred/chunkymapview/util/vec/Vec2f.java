@@ -24,4 +24,8 @@ public class Vec2f {
     public Vec2i toIntVec() {
         return new Vec2i((int) this.x, (int) this.y);
     }
+
+    public Vec2i toIntVecCeil() {
+        return new Vec2i((int) Math.ceil(this.x), (int) Math.ceil(this.y));
+    }
 }

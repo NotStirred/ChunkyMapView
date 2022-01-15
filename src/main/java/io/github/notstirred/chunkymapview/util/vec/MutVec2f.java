@@ -1,5 +1,6 @@
 package io.github.notstirred.chunkymapview.util.vec;
 
+import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -64,6 +65,10 @@ public class MutVec2f {
 
     public MutVec2i toIntVec() {
         return new MutVec2i((int) this.x, (int) this.y);
+    }
+
+    public MutVec2i toIntVecCeil() {
+        return new MutVec2i((int) Math.ceil(this.x), (int) Math.ceil(this.y));
     }
 
     public Vec2f toImmutable() {
