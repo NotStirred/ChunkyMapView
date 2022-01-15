@@ -5,8 +5,9 @@ import io.github.notstirred.chunkymapview.util.Validation;
 
 import java.nio.ByteBuffer;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL44C.glClearTexImage;
 
 public class MetaTexture2D extends GLObject {
     protected final int internalFormat;
@@ -52,6 +53,21 @@ public class MetaTexture2D extends GLObject {
                 this.format, this.type,
                 buffer
         );
+    }
+
+    public void clear() {
+        this.bind();
+        if(GLUtils.ARB_clear_texture) {
+            glClearTexImage(this.id, 0, GL_RGBA, GL_UNSIGNED_BYTE, (int[]) null);
+        } else {
+            //TODO: share this buffer between calls
+            ByteBuffer buf = ByteBuffer.allocateDirect(this.elementWidth * this.xCount * this.elementHeight * this.zCount * 4);
+            glTexSubImage2D(GL_TEXTURE_2D, 0,
+                    0, 0, this.elementWidth*this.xCount, this.elementHeight*this.zCount,
+                    this.format, this.type,
+                    buf
+            );
+        }
     }
 
     @Override

@@ -1,8 +1,8 @@
 package io.github.notstirred.chunkymapview;
 
+import io.github.notstirred.chunkymapview.collections.cache.Cache;
 import io.github.notstirred.chunkymapview.tile.DetailBasedTile;
-import io.github.notstirred.chunkymapview.tile.SizedCache;
-import io.github.notstirred.chunkymapview.tile.SortedCache;
+import io.github.notstirred.chunkymapview.collections.cache.SortedCache;
 import io.github.notstirred.chunkymapview.tile.TilePos;
 import io.github.notstirred.chunkymapview.tile.gen.DetailBasedTileGenerator;
 import io.github.notstirred.chunkymapview.track.DetailBasedView;
@@ -21,7 +21,8 @@ public class DetailBasedMapView extends MapView<TilePos, DetailBasedView, Detail
         super(cacheSizeMiB);
     }
 
-    protected SizedCache<RegionPos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB) {
+    @Override
+    protected Cache<RegionPos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB) {
         int bytesPerTile = 4 * 16*16;
         int bytesPerMetaTexture = bytesPerTile * RegionPos.REGION_DIAMETER_IN_TILES*RegionPos.REGION_DIAMETER_IN_TILES;
 
@@ -63,7 +64,7 @@ public class DetailBasedMapView extends MapView<TilePos, DetailBasedView, Detail
                             (pos2.z() << pos2.level()) >> view.lowestLevel()
                     )
             );
-        });
+        }, this.textureSupplier::release);
     }
 
     @Override

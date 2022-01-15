@@ -1,8 +1,8 @@
 package io.github.notstirred.chunkymapview.render;
 
 import io.github.notstirred.chunkymapview.MapView;
-import io.github.notstirred.chunkymapview.tile.SizedCache;
-import io.github.notstirred.chunkymapview.tile.SortedCache;
+import io.github.notstirred.chunkymapview.collections.cache.Cache;
+import io.github.notstirred.chunkymapview.collections.cache.SortedCache;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
 import io.github.notstirred.chunkymapview.util.gl.GLUtils;
 import io.github.notstirred.chunkymapview.util.gl.ReferenceTrackingMetaTexture2D;
@@ -98,7 +98,7 @@ public class Renderer {
         texLoc = glGetUniformLocation(planeProgram, "tex");
     }
 
-    public boolean render(int highestLevel, SizedCache<MapView.RegionPos, ReferenceTrackingMetaTexture2D> textures, MutableAABBf2d viewExtents) {
+    public boolean render(int highestLevel, Cache<MapView.RegionPos, ReferenceTrackingMetaTexture2D> textures, MutableAABBf2d viewExtents) {
         if(glfwWindowShouldClose(window))
             return false;
 

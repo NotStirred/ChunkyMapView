@@ -2,6 +2,7 @@ package io.github.notstirred.chunkymapview.util.gl;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
+import org.lwjgl.opengl.GL;
 
 import java.io.*;
 import java.net.URL;
@@ -29,6 +30,8 @@ import static org.lwjgl.opengl.GL20C.glShaderSource;
 import static org.lwjgl.system.MemoryUtil.memUTF8;
 
 public class GLUtils {
+    public static final boolean ARB_clear_texture = GL.getCapabilities().GL_ARB_clear_texture;
+
     private static ByteBuffer resizeBuffer(ByteBuffer buffer, int newCapacity) {
         ByteBuffer newBuffer = BufferUtils.createByteBuffer(newCapacity);
         buffer.flip();

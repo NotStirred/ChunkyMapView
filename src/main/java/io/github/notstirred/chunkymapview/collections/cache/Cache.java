@@ -1,4 +1,4 @@
-package io.github.notstirred.chunkymapview.tile;
+package io.github.notstirred.chunkymapview.collections.cache;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;

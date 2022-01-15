@@ -1,4 +1,4 @@
-package io.github.notstirred.chunkymapview.tile;
+package io.github.notstirred.chunkymapview.collections.cache;
 
 import lombok.RequiredArgsConstructor;
 
@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -14,14 +15,17 @@ import java.util.function.Function;
  */
 @RequiredArgsConstructor
 public class SortedCache<K, V> implements SizedCache<K, V> {
-    private final int maxSize;
-    private final Comparator<K> comparator;
-    
-    private final Map<K, V> cachedPositions = new HashMap<>();
+    protected final int maxSize;
+    protected final Comparator<K> comparator;
+    protected final Consumer<V> onRemovalConsumer;
+
+    protected final Map<K, V> cachedPositions = new HashMap<>();
     
     @Override
     public void put(K key, V val) {
-        this.cachedPositions.put(key, val);
+        V replaced = this.cachedPositions.put(key, val);
+        if(replaced != null)
+            this.onRemovalConsumer.accept(replaced);
 
         if(this.cachedPositions.size() == this.maxSize) {
             trimLastElements();
@@ -55,7 +59,7 @@ public class SortedCache<K, V> implements SizedCache<K, V> {
         Arrays.sort(positions, this.comparator);
 
         for (int i = (int) (positions.length*0.8), l = positions.length; i < l; i++) {
-            this.cachedPositions.remove(positions[i]);
+            this.onRemovalConsumer.accept(this.cachedPositions.remove(positions[i]));
         }
     }
 

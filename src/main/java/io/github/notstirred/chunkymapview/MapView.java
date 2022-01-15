@@ -1,14 +1,14 @@
 package io.github.notstirred.chunkymapview;
 
+import io.github.notstirred.chunkymapview.collections.cache.Cache;
 import io.github.notstirred.chunkymapview.concurrent.SimpleTaskPool;
-import io.github.notstirred.chunkymapview.tile.SizedCache;
-import io.github.notstirred.chunkymapview.tile.SortedCache;
 import io.github.notstirred.chunkymapview.tile.Tile;
 import io.github.notstirred.chunkymapview.tile.TilePos;
 import io.github.notstirred.chunkymapview.tile.gen.TileGenerator;
 import io.github.notstirred.chunkymapview.track.View;
 import io.github.notstirred.chunkymapview.track.ViewTracker;
 import io.github.notstirred.chunkymapview.util.MathUtil;
+import io.github.notstirred.chunkymapview.util.ResettingRecyclingSupplier;
 import io.github.notstirred.chunkymapview.util.gl.ReferenceTrackingMetaTexture2D;
 import lombok.Data;
 import lombok.Getter;
@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 
 public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE extends Tile<POS>, DATA> {
@@ -32,7 +32,13 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
     @Getter
     protected final ViewTracker<POS, VIEW, TILE> viewTracker;
 
-    private final SizedCache<RegionPos, ReferenceTrackingMetaTexture2D> textureCache;
+    protected final Cache<RegionPos, ReferenceTrackingMetaTexture2D> textureCache;
+    protected final ResettingRecyclingSupplier<ReferenceTrackingMetaTexture2D> textureSupplier = new ResettingRecyclingSupplier<ReferenceTrackingMetaTexture2D>() {
+        @Override
+        protected ReferenceTrackingMetaTexture2D allocate0() {
+            return create();
+        }
+    };
 
     public MapView(int cacheSizeMiB) {
         this.viewTracker = viewTracker0(this);
@@ -47,7 +53,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
         );
     }
 
-    public SizedCache<RegionPos, ReferenceTrackingMetaTexture2D> textureCache() {
+    public Cache<RegionPos, ReferenceTrackingMetaTexture2D> textureCache() {
         return textureCache;
     }
 
@@ -84,7 +90,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
         }, executor).thenComposeAsync(tile -> {
             RegionPos regionPos = RegionPos.from(tile.pos());
 
-            ReferenceTrackingMetaTexture2D areaTexture = textureCache.computeIfAbsent(regionPos, (p) -> this.create());
+            ReferenceTrackingMetaTexture2D areaTexture = textureCache.computeIfAbsent(regionPos, (p) -> this.textureSupplier.allocate());
 
             int xIdx = tile.pos().x() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
             int zIdx = tile.pos().z() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
@@ -109,7 +115,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
         });
     }
 
-    protected abstract SizedCache<RegionPos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB);
+    protected abstract Cache<RegionPos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB);
 
     protected abstract ViewTracker<POS, VIEW, TILE> viewTracker0(MapView<POS, VIEW, TILE, DATA> mapView);
 
