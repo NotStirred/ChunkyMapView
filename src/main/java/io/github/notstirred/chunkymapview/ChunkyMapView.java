@@ -15,7 +15,7 @@ public class ChunkyMapView {
 
     MutVec2f viewResolution = new MutVec2f(1280, 720);
 
-    private static final int MAX_LEVEL = 31;
+    private static final int MAX_LEVEL = 16;
 
     private final int PADDING = 2;
 
@@ -23,10 +23,10 @@ public class ChunkyMapView {
 
         Renderer renderer = new Renderer();
 
-        MapView<TilePos, DetailBasedView, DetailBasedTile, ByteBuffer> mapView = new DetailBasedMapView(64);
+        MapView<TilePos, DetailBasedView, DetailBasedTile, ByteBuffer> mapView = new DetailBasedMapView(1024);
 
         MutVec2f viewPos = new MutVec2f(0, 0);
-        MutVec2f viewSize = new MutVec2f(128, 72);
+        MutVec2f viewSize = new MutVec2f(1280, 720);
         MutableAABBf2d viewExtents = new MutableAABBf2d(viewPos, new MutVec2f());
 
         long timePerFrame = 1000/60;
