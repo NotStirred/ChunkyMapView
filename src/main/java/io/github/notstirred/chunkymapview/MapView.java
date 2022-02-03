@@ -32,7 +32,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
     @Getter
     protected final ViewTracker<POS, VIEW, TILE> viewTracker;
 
-    protected final Cache<RegionPos, ReferenceTrackingMetaTexture2D> textureCache;
+    protected final Cache<MetaTilePos, ReferenceTrackingMetaTexture2D> textureCache;
     protected final ResettingRecyclingSupplier<ReferenceTrackingMetaTexture2D> textureSupplier = new ResettingRecyclingSupplier<ReferenceTrackingMetaTexture2D>() {
         @Override
         protected ReferenceTrackingMetaTexture2D allocate0() {
@@ -46,37 +46,37 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
     }
 
     private ReferenceTrackingMetaTexture2D create() {
-        return new ReferenceTrackingMetaTexture2D(TilePos.TILE_DIAMETER, TilePos.TILE_DIAMETER, RegionPos.REGION_DIAMETER_IN_TILES, RegionPos.REGION_DIAMETER_IN_TILES,
+        return new ReferenceTrackingMetaTexture2D(TilePos.TILE_DIAMETER, TilePos.TILE_DIAMETER, MetaTilePos.METATILE_DIAMETER_IN_TILES, MetaTilePos.METATILE_DIAMETER_IN_TILES,
                 GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA,
                 GL_NEAREST, GL_NEAREST,
                 GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
         );
     }
 
-    public Cache<RegionPos, ReferenceTrackingMetaTexture2D> textureCache() {
+    public Cache<MetaTilePos, ReferenceTrackingMetaTexture2D> textureCache() {
         return textureCache;
     }
 
     @Data
-    public static class RegionPos {
-        public static final int REGION_DIAMETER_IN_TILES = 1;
-        public static final int REGION_BITS = (int) MathUtil.log2(REGION_DIAMETER_IN_TILES);
+    public static class MetaTilePos {
+        public static final int METATILE_DIAMETER_IN_TILES = 1;
+        public static final int METATILE_BITS = (int) MathUtil.log2(METATILE_DIAMETER_IN_TILES);
 
         private final int x;
         private final int z;
         private final int level;
 
-        private static RegionPos from(TilePos pos) {
-            return new RegionPos(pos.x() >> REGION_BITS, pos.z() >> REGION_BITS, pos.level());
+        private static MetaTilePos from(TilePos pos) {
+            return new MetaTilePos(pos.x() >> METATILE_BITS, pos.z() >> METATILE_BITS, pos.level());
         }
     }
 
     public CompletableFuture<TILE> loadingFuture(POS pos, Executor executor) {
         {
-            int xIdx = pos.x() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
-            int zIdx = pos.z() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
+            int xIdx = pos.x() & (MetaTilePos.METATILE_DIAMETER_IN_TILES - 1);
+            int zIdx = pos.z() & (MetaTilePos.METATILE_DIAMETER_IN_TILES - 1);
 
-            ReferenceTrackingMetaTexture2D texture = textureCache.get(RegionPos.from(pos));
+            ReferenceTrackingMetaTexture2D texture = textureCache.get(MetaTilePos.from(pos));
             //if texture exists, and is already tracking this tile, we just return an empty tile for this position
             if (texture != null && texture.contains(xIdx, zIdx)) {
                 return CompletableFuture.completedFuture(createTile0(pos));
@@ -88,12 +88,12 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
             generateTile0(tile);
             return tile;
         }, executor).thenComposeAsync(tile -> {
-            RegionPos regionPos = RegionPos.from(tile.pos());
+            MetaTilePos metaTilePos = MetaTilePos.from(tile.pos());
 
-            ReferenceTrackingMetaTexture2D areaTexture = textureCache.computeIfAbsent(regionPos, (p) -> this.textureSupplier.allocate());
+            ReferenceTrackingMetaTexture2D areaTexture = textureCache.computeIfAbsent(metaTilePos, (p) -> this.textureSupplier.allocate());
 
-            int xIdx = tile.pos().x() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
-            int zIdx = tile.pos().z() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
+            int xIdx = tile.pos().x() & (MetaTilePos.METATILE_DIAMETER_IN_TILES - 1);
+            int zIdx = tile.pos().z() & (MetaTilePos.METATILE_DIAMETER_IN_TILES - 1);
             areaTexture.ref(xIdx, zIdx);
             areaTexture.set(xIdx, zIdx, tile.data()); //tile.data is never assigned to null, so no race condition
             return CompletableFuture.completedFuture(tile);
@@ -101,9 +101,9 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
     }
 
     public void tileUnloadSync(POS pos) {
-        textureCache.computeIfPresent(RegionPos.from(pos), (regionPos, texture) -> {
-            int xIdx = pos.x() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
-            int zIdx = pos.z() & (RegionPos.REGION_DIAMETER_IN_TILES - 1);
+        textureCache.computeIfPresent(MetaTilePos.from(pos), (metaTilePos, texture) -> {
+            int xIdx = pos.x() & (MetaTilePos.METATILE_DIAMETER_IN_TILES - 1);
+            int zIdx = pos.z() & (MetaTilePos.METATILE_DIAMETER_IN_TILES - 1);
             texture.deref(xIdx, zIdx);
 
             if (!texture.anyRef()) // no loaded tiles reference this texture, can be unloaded
@@ -115,7 +115,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
         });
     }
 
-    protected abstract Cache<RegionPos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB);
+    protected abstract Cache<MetaTilePos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB);
 
     protected abstract ViewTracker<POS, VIEW, TILE> viewTracker0(MapView<POS, VIEW, TILE, DATA> mapView);
 

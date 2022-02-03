@@ -98,7 +98,7 @@ public class Renderer {
         texLoc = glGetUniformLocation(planeProgram, "tex");
     }
 
-    public boolean render(int highestLevel, Cache<MapView.RegionPos, ReferenceTrackingMetaTexture2D> textures, MutableAABBf2d viewExtents) {
+    public boolean render(int highestLevel, Cache<MapView.MetaTilePos, ReferenceTrackingMetaTexture2D> textures, MutableAABBf2d viewExtents) {
         if(glfwWindowShouldClose(window))
             return false;
 
@@ -139,8 +139,8 @@ public class Renderer {
             }
 
             float[] mvpArray = new float[16];
-            for (Map.Entry<MapView.RegionPos, ReferenceTrackingMetaTexture2D> entry : ((SortedCache<MapView.RegionPos, ReferenceTrackingMetaTexture2D>)textures).entrySet()) {
-                MapView.RegionPos pos = entry.getKey();
+            for (Map.Entry<MapView.MetaTilePos, ReferenceTrackingMetaTexture2D> entry : ((SortedCache<MapView.MetaTilePos, ReferenceTrackingMetaTexture2D>)textures).entrySet()) {
+                MapView.MetaTilePos pos = entry.getKey();
                 if(pos.level() < highestLevel)
                     continue;
 
@@ -151,7 +151,7 @@ public class Renderer {
                 //bind our texture to the active 2D texture unit
                 texture.bind();
 
-                int shift = MapView.RegionPos.REGION_BITS + pos.level();
+                int shift = MapView.MetaTilePos.METATILE_BITS + pos.level();
 
                 Matrix4f mvp = new Matrix4f(vp).translate(new Vector3f(pos.x() << shift, -pos.level(), pos.z() << shift)).scale((1 << shift) * 0.95f);
 
@@ -175,7 +175,6 @@ public class Renderer {
     private void init() {
         glfwInit();
         glfwSetErrorCallback(GLFWErrorCallback.createPrint(System.err));
-
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);

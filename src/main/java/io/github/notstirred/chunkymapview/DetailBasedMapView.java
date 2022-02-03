@@ -22,9 +22,9 @@ public class DetailBasedMapView extends MapView<TilePos, DetailBasedView, Detail
     }
 
     @Override
-    protected Cache<RegionPos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB) {
+    protected Cache<MetaTilePos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB) {
         int bytesPerTile = 4 * TilePos.TILE_DIAMETER*TilePos.TILE_DIAMETER;
-        int bytesPerMetaTexture = bytesPerTile * RegionPos.REGION_DIAMETER_IN_TILES*RegionPos.REGION_DIAMETER_IN_TILES;
+        int bytesPerMetaTexture = bytesPerTile * MetaTilePos.METATILE_DIAMETER_IN_TILES * MetaTilePos.METATILE_DIAMETER_IN_TILES;
 
         int cacheSizeBytes = cacheSizeMiB * 1024*1024;
 
@@ -35,7 +35,7 @@ public class DetailBasedMapView extends MapView<TilePos, DetailBasedView, Detail
             Vec2i centre = viewTracker.viewCentre();
             AABBi2d extents = view.extents();
 
-            int texturePosShift = view.lowestLevel() + RegionPos.REGION_BITS;
+            int texturePosShift = view.lowestLevel() + MetaTilePos.METATILE_BITS;
 
             Vec2i minExtents = extents.minExtents();
 
@@ -48,17 +48,17 @@ public class DetailBasedMapView extends MapView<TilePos, DetailBasedView, Detail
 
             return Integer.compare(
                     manhattanDistance(
-                            centre.x() >> RegionPos.REGION_BITS + view.lowestLevel(),
+                            centre.x() >> MetaTilePos.METATILE_BITS + view.lowestLevel(),
                             0,
-                            centre.y() >> RegionPos.REGION_BITS + view.lowestLevel(),
+                            centre.y() >> MetaTilePos.METATILE_BITS + view.lowestLevel(),
                             (pos1.x() << pos1.level()) >> view.lowestLevel(),
                             pos1Y,
                             (pos1.z() << pos1.level()) >> view.lowestLevel()
                     ),
                     manhattanDistance(
-                            centre.x() >> RegionPos.REGION_BITS + view.lowestLevel(),
+                            centre.x() >> MetaTilePos.METATILE_BITS + view.lowestLevel(),
                             0,
-                            centre.y() >> RegionPos.REGION_BITS + view.lowestLevel(),
+                            centre.y() >> MetaTilePos.METATILE_BITS + view.lowestLevel(),
                             (pos2.x() << pos2.level()) >> view.lowestLevel(),
                             pos2Y,
                             (pos2.z() << pos2.level()) >> view.lowestLevel()
