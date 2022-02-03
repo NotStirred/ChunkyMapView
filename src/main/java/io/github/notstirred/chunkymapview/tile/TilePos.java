@@ -7,6 +7,8 @@ import static io.github.notstirred.chunkymapview.util.Validation.check;
 
 @Data
 public class TilePos {
+    public static final int TILE_DIAMETER = 128;
+
     private final int x;
     private final int z;
     private final int level;

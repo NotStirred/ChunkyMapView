@@ -46,7 +46,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
     }
 
     private ReferenceTrackingMetaTexture2D create() {
-        return new ReferenceTrackingMetaTexture2D(16, 16, RegionPos.REGION_DIAMETER_IN_TILES, RegionPos.REGION_DIAMETER_IN_TILES,
+        return new ReferenceTrackingMetaTexture2D(TilePos.TILE_DIAMETER, TilePos.TILE_DIAMETER, RegionPos.REGION_DIAMETER_IN_TILES, RegionPos.REGION_DIAMETER_IN_TILES,
                 GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA,
                 GL_NEAREST, GL_NEAREST,
                 GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
@@ -59,7 +59,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
 
     @Data
     public static class RegionPos {
-        public static final int REGION_DIAMETER_IN_TILES = 16;
+        public static final int REGION_DIAMETER_IN_TILES = 1;
         public static final int REGION_BITS = (int) MathUtil.log2(REGION_DIAMETER_IN_TILES);
 
         private final int x;
@@ -110,7 +110,7 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
                 return null;
 
             //another tile is still using this texture, clear the data for this tile from it
-            texture.set(xIdx, zIdx, ByteBuffer.allocateDirect(16 * 16 * 4));
+            texture.set(xIdx, zIdx, ByteBuffer.allocateDirect(TilePos.TILE_DIAMETER * TilePos.TILE_DIAMETER * 4));
             return texture;
         });
     }

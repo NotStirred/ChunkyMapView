@@ -23,7 +23,7 @@ public class DetailBasedMapView extends MapView<TilePos, DetailBasedView, Detail
 
     @Override
     protected Cache<RegionPos, ReferenceTrackingMetaTexture2D> cache0(int cacheSizeMiB) {
-        int bytesPerTile = 4 * 16*16;
+        int bytesPerTile = 4 * TilePos.TILE_DIAMETER*TilePos.TILE_DIAMETER;
         int bytesPerMetaTexture = bytesPerTile * RegionPos.REGION_DIAMETER_IN_TILES*RegionPos.REGION_DIAMETER_IN_TILES;
 
         int cacheSizeBytes = cacheSizeMiB * 1024*1024;

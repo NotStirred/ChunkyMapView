@@ -39,7 +39,7 @@ public class ChunkyMapView {
                 renderer.update(viewPos, viewSize);
                 viewExtents.maxExtents().set(viewPos.added(viewSize));
 
-                level = Math.min(MAX_LEVEL, calculateHighestLevelForView(viewExtents.size().toIntVecCeil(), viewResolution.toIntVecCeil().toImmutable()));
+                level = Math.min(MAX_LEVEL, calculateHighestLevelForView(viewExtents.size().toIntVecCeil(), viewResolution.toIntVecCeil().toImmutable(), TilePos.TILE_DIAMETER));
                 DetailBasedView detailBasedView = new DetailBasedView(viewResolution.toIntVec().toImmutable(), viewExtents.toExpandedIntBox().toImmutable(), level, Math.min(level + 3, MAX_LEVEL), PADDING);
                 mapView.viewTracker.viewUpdated(detailBasedView);
 
@@ -60,12 +60,12 @@ public class ChunkyMapView {
         } catch (InterruptedException ignored) { }
     }
 
-    private static int calculateHighestLevelForView(Vec2i areaSize, Vec2i viewResolution) {
+    private static int calculateHighestLevelForView(Vec2i areaSize, Vec2i viewResolution, int tileSize) {
         double xPixelsPerTile = (viewResolution.x()) / ((double) areaSize.x());
         double zPixelsPerTile = (viewResolution.y()) / ((double) areaSize.y());
 
         double pixelsPerTile = Math.max(xPixelsPerTile, zPixelsPerTile);
-        return (int) Math.floor(Math.max(MathUtil.log2(16*(1/pixelsPerTile)), 0));
+        return (int) Math.floor(Math.max(MathUtil.log2(tileSize*(1/pixelsPerTile)), 0));
     }
 
     public static void main(String[] args) {
