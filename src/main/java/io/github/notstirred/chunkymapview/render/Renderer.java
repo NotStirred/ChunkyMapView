@@ -1,8 +1,8 @@
 package io.github.notstirred.chunkymapview.render;
 
-import io.github.notstirred.chunkymapview.MapView;
 import io.github.notstirred.chunkymapview.collections.cache.Cache;
 import io.github.notstirred.chunkymapview.collections.cache.SortedCache;
+import io.github.notstirred.chunkymapview.tile.MetaTilePos;
 import io.github.notstirred.chunkymapview.util.bb.MutableAABBf2d;
 import io.github.notstirred.chunkymapview.util.gl.GLUtils;
 import io.github.notstirred.chunkymapview.util.gl.ReferenceTrackingMetaTexture2D;
@@ -98,7 +98,7 @@ public class Renderer {
         texLoc = glGetUniformLocation(planeProgram, "tex");
     }
 
-    public boolean render(int highestLevel, Cache<MapView.MetaTilePos, ReferenceTrackingMetaTexture2D> textures, MutableAABBf2d viewExtents) {
+    public boolean render(int highestLevel, Cache<MetaTilePos, ReferenceTrackingMetaTexture2D> textures, MutableAABBf2d viewExtents) {
         if(glfwWindowShouldClose(window))
             return false;
 
@@ -139,8 +139,8 @@ public class Renderer {
             }
 
             float[] mvpArray = new float[16];
-            for (Map.Entry<MapView.MetaTilePos, ReferenceTrackingMetaTexture2D> entry : ((SortedCache<MapView.MetaTilePos, ReferenceTrackingMetaTexture2D>)textures).entrySet()) {
-                MapView.MetaTilePos pos = entry.getKey();
+            for (Map.Entry<MetaTilePos, ReferenceTrackingMetaTexture2D> entry : ((SortedCache<MetaTilePos, ReferenceTrackingMetaTexture2D>)textures).entrySet()) {
+                MetaTilePos pos = entry.getKey();
                 if(pos.level() < highestLevel)
                     continue;
 
@@ -151,7 +151,7 @@ public class Renderer {
                 //bind our texture to the active 2D texture unit
                 texture.bind();
 
-                int shift = MapView.MetaTilePos.METATILE_BITS + pos.level();
+                int shift = MetaTilePos.METATILE_BITS + pos.level();
 
                 Matrix4f mvp = new Matrix4f(vp).translate(new Vector3f(pos.x() << shift, -pos.level(), pos.z() << shift)).scale((1 << shift) * 0.95f);
 

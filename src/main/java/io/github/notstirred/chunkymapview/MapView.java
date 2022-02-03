@@ -2,6 +2,7 @@ package io.github.notstirred.chunkymapview;
 
 import io.github.notstirred.chunkymapview.collections.cache.Cache;
 import io.github.notstirred.chunkymapview.concurrent.SimpleTaskPool;
+import io.github.notstirred.chunkymapview.tile.MetaTilePos;
 import io.github.notstirred.chunkymapview.tile.Tile;
 import io.github.notstirred.chunkymapview.tile.TilePos;
 import io.github.notstirred.chunkymapview.tile.gen.TileGenerator;
@@ -55,20 +56,6 @@ public abstract class MapView<POS extends TilePos, VIEW extends View<POS>, TILE 
 
     public Cache<MetaTilePos, ReferenceTrackingMetaTexture2D> textureCache() {
         return textureCache;
-    }
-
-    @Data
-    public static class MetaTilePos {
-        public static final int METATILE_DIAMETER_IN_TILES = 1;
-        public static final int METATILE_BITS = (int) MathUtil.log2(METATILE_DIAMETER_IN_TILES);
-
-        private final int x;
-        private final int z;
-        private final int level;
-
-        private static MetaTilePos from(TilePos pos) {
-            return new MetaTilePos(pos.x() >> METATILE_BITS, pos.z() >> METATILE_BITS, pos.level());
-        }
     }
 
     public CompletableFuture<TILE> loadingFuture(POS pos, Executor executor) {

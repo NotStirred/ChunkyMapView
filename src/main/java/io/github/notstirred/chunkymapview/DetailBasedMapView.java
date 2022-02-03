@@ -3,6 +3,7 @@ package io.github.notstirred.chunkymapview;
 import io.github.notstirred.chunkymapview.collections.cache.Cache;
 import io.github.notstirred.chunkymapview.tile.DetailBasedTile;
 import io.github.notstirred.chunkymapview.collections.cache.SortedCache;
+import io.github.notstirred.chunkymapview.tile.MetaTilePos;
 import io.github.notstirred.chunkymapview.tile.TilePos;
 import io.github.notstirred.chunkymapview.tile.gen.DetailBasedTileGenerator;
 import io.github.notstirred.chunkymapview.track.DetailBasedView;
